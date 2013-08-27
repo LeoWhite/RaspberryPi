@@ -73,6 +73,10 @@ for servo in servos:
 servoCurrent=[]
 for servo in servos:
   servoCurrent.append(servo.park)
+
+servoPark=[]
+for servo in servos:
+  servoPark.append(servo.park)
   
 pygame.init()
 
@@ -138,7 +142,7 @@ def processMotor(event):
     
             if UpdateMotors:
               #print 'speed = %f' % Speed, 'Direction %f' % Direction
-              NewPosition = servo.park + (((servo.max - servo.min) / 2) * Position)
+              NewPosition = servoPark[servo.channel] + (((servo.max - servo.min) / 2) * Position)
               NewPosition = (int)(math.fabs(NewPosition))
               NewPosition = max(NewPosition, servo.min)
               NewPosition = min(NewPosition, servo.max)
@@ -146,7 +150,16 @@ def processMotor(event):
               if NewPosition != servoCurrent[servo.channel]:
                 servoCurrent[servo.channel] = NewPosition
                 setServoPulse(servo.channel, servoCurrent[servo.channel])
-                          
+                        
+          elif event.type == pygame.JOYBUTTONDOWN:
+              # Remember the current position as the new default
+              if event.button == PS3_CROSS:
+                servoPark[:] = servoCurrent[:]                          
+              elif event.button == PS3_START:
+                for servo in servos:
+                  servoPark[servo.channel] = servo.park              
+                  servoCurrent[servo.channel] = servo.park              
+                  setServoPulse(servo.channel, servoCurrent[servo.channel])
  
 try:
     while True:
