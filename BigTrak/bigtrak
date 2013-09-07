@@ -1,0 +1,27 @@
+#! /bin/sh
+# /etc/init.d/noip
+
+
+# If you want a command to always run, put it here
+
+
+# Carry out specific functions when asked to by the system
+case "$1" in
+  start)
+    echo "Starting noip"
+    # run application you want to start
+    sudo -b nohup python /home/pi/RPI/BigTrak/BigTrakWiringPi.py
+    ;;
+  stop)
+    echo "Stopping noip"
+    # kill application you want to stop
+    ;;
+  *)
+    echo "Usage: /etc/init.d/noip {start|stop}"
+    exit 1
+    ;;
+esac
+
+
+exit 0
+
