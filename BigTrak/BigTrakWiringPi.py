@@ -1,17 +1,17 @@
 #!/usr/bin/env python
  
 import pygame
-import usb.core
+#import usb.core
 import math
 import time
 #import RPi.GPIO as GPIO
 import subprocess
-import wiringpi
+import wiringpi2
 
 pygame.init()
 
 # Setup the wiring Pi GPIO
-io = wiringpi.GPIO(wiringpi.GPIO.WPI_MODE_GPIO)
+io = wiringpi2.GPIO(wiringpi2.GPIO.WPI_MODE_GPIO)
  
 # Setup the various GPIO values, using the BCM numbers for now
 PWMA = 18
@@ -26,8 +26,8 @@ A1 = False
 B0 = False
 B1 = False
 
-wiringpi.softPwmCreate(PWMA, 0, 80)
-wiringpi.softPwmCreate(PWMB, 0, 80)
+wiringpi2.softPwmCreate(PWMA, 0, 80)
+wiringpi2.softPwmCreate(PWMB, 0, 80)
 
 io.pinMode(DRIVEA0, io.OUTPUT)
 io.pinMode(DRIVEA1, io.OUTPUT)
@@ -45,8 +45,8 @@ io.digitalWrite(DRIVEB0, B0)
 io.digitalWrite(DRIVEB1, B1)
 
 # Enable PWM
-wiringpi.softPwmWrite(PWMA, 0)
-wiringpi.softPwmWrite(PWMB, 0)
+wiringpi2.softPwmWrite(PWMA, 0)
+wiringpi2.softPwmWrite(PWMB, 0)
 
 # Wait for a joystick
 while pygame.joystick.get_count() == 0:
@@ -86,8 +86,8 @@ def setmotors():
         io.digitalWrite(STANDBY, io.HIGH)
         io.digitalWrite(DRIVEB0, B0)
         io.digitalWrite(DRIVEB1, B1)
-        wiringpi.softPwmWrite(PWMA, (int)((math.fabs(LeftTrack) - threshold) * 80))
-        wiringpi.softPwmWrite(PWMB, (int)((math.fabs(RightTrack) - threshold) * 80))
+        wiringpi2.softPwmWrite(PWMA, (int)((math.fabs(LeftTrack) - threshold) * 80))
+        wiringpi2.softPwmWrite(PWMB, (int)((math.fabs(RightTrack) - threshold) * 80))
         
 try:
     # Only allow axis and button events
@@ -97,7 +97,7 @@ try:
     io.digitalWrite(STANDBY, io.HIGH)
         
     while True:
-        time.sleep(0.1)
+        time.sleep(0.01)
         events = pygame.event.get()
         for event in events:
           UpdateMotors = 0
