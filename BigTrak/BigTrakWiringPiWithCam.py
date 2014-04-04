@@ -6,6 +6,7 @@ import math
 import time
 #import RPi.GPIO as GPIO
 import subprocess
+import os
 import wiringpi2
 from collections import namedtuple
 
@@ -47,11 +48,12 @@ PS3_AXIS_SQUARE = 19
 PS3_AXIS_PLAYSTATION = 16
 
 
-ServoStruct = namedtuple("ServoStruct", "channel axis min max park gpio")
+ServoStruct = namedtuple("ServoStruct", "channel axis min max park")
 
 # Create the list of Servos for the arm
 servos=[]
-servos.append(ServoStruct(0, PS3_AXIS_RIGHT_V, 0, 100, 50, 8))
+servos.append(ServoStruct(0, PS3_AXIS_RIGHT_V, 0, 100, 50))
+servos.append(ServoStruct(1, PS3_AXIS_RIGHT_H, 0, 100, 50))
 
 servoMids=[]
 for servo in servos:
@@ -90,7 +92,7 @@ A1 = False
 B0 = False
 B1 = False
 
-wiringpi2.softPwmCreate(SERVOA, 0, 100)
+#wiringpi2.softPwmCreate(SERVOA, 0, 100)
 wiringpi2.softPwmCreate(PWMA, 0, 80)
 wiringpi2.softPwmCreate(PWMB, 0, 80)
 
@@ -110,7 +112,7 @@ io.digitalWrite(DRIVEB0, B0)
 io.digitalWrite(DRIVEB1, B1)
 
 # Enable PWM
-wiringpi2.softPwmWrite(SERVOA, 0)
+#wiringpi2.softPwmWrite(SERVOA, 0)
 wiringpi2.softPwmWrite(PWMA, 0)
 wiringpi2.softPwmWrite(PWMB, 0)
 
@@ -132,7 +134,7 @@ print 'Initialized Joystick : %s' % j.get_name()
 threshold = 0.20
 
 camThreshold = 0.60
-Step = 1
+Step = 2
 
 # Motor defaults
 LeftTrack = 0
@@ -140,8 +142,14 @@ RightTrack = 0
 Speed = 0
 Direction = 0
 
-#for servo in servos:
-#  #setServoPulse(servo.channel, servo.park)
+# we need to convert us pulses to 12 bit ticks
+def setServoPulse(channel, pulse):
+  string = "echo %d=%d%% > /dev/servoblaster" % (channel, pulse)
+  os.system(string)
+
+
+for servo in servos:
+  setServoPulse(servo.channel, servo.park)
 
   
 def findServoForAxis(axis):
@@ -194,17 +202,6 @@ try:
               Direction = event.value
               UpdateMotors = 1
     
-            if UpdateCam:
-              NewPosition = servoPark[servo.channel] + (((servo.max - servo.min) / 2) * Position)
-              NewPosition = (int)(math.fabs(NewPosition))
-              NewPosition = max(NewPosition, servo.min)
-              NewPosition = min(NewPosition, servo.max)
-             
-              if NewPosition != servoCurrent[servo.channel]:
-                print 'NewPositoin = %f' %NewPosition
-                servoCurrent[servo.channel] = NewPosition
-                wiringpi2.softPwmWrite(servo.gpio, (int)(servoCurrent[servo.channel]))
-    
             if UpdateMotors:
               # We need to work out what speed to drive each of the motors
               LeftTrack = Speed + Direction
@@ -215,7 +212,7 @@ try:
               MaxMotorScale = max(MaxMotorScale, 1)
  
               LeftTrack = LeftTrack/MaxMotorScale
-              RightTrack = -(RightTrack/MaxMotorScale)
+              rightTrack = -(RightTrack/MaxMotorScale)
 
               # Make forwards/backwards easier
               if math.fabs(LeftTrack + RightTrack) < (threshold * 2):
@@ -269,9 +266,9 @@ try:
             NewPosition = min(NewPosition, servo.max)
               
             if NewPosition != servoCurrent[servo.channel]:
-              print 'NewPosition = %f' % NewPosition
-              servoCurrent[servo.channel] = NewPosition
-              wiringpi2.softPwmWrite(servo.gpio, (int)(math.fabs(servoCurrent[servo.channel])))
+              #print 'NewPosition = %f' % NewPosition
+              servoCurrent[servo.channel] = (int)(math.fabs(NewPosition))
+              setServoPulse(servo.channel, servoCurrent[servo.channel])
                              
 except KeyboardInterrupt:
     # Turn off the motors
