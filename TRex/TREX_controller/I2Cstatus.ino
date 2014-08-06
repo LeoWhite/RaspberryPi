@@ -2,6 +2,7 @@
 void I2Cstatus()
 {
   byte datapack[24];                             // array to store data packet in prior to transmission
+  
   datapack[0]=startbyte;                         // each packet starts with startbyte
   datapack[1]=errorflag;                         // nonzero if bad data received - Master must wait until buffer has been flushed and send again
   
@@ -40,13 +41,13 @@ void I2Cstatus()
   
   Wire.write(datapack,24);                       // transmit data packet of 24 bytes
   errorflag=0;                                   // reset erroflag once error has been reported to I²C Master
-  /*
-  Serial.println("Status data packet sent to Master:");
-  for(byte i=0;i<24;i++)
-  {
-    Serial.print(i,DEC);Serial.print("\t");Serial.println(datapack[i],DEC);
-  }
-  */
+  
+//  Serial.println("Status data packet sent to Master:");
+//  for(byte i=0;i<24;i++)
+//  {
+//    Serial.print(i,DEC);Serial.print("\t");Serial.println(datapack[i],DEC);
+//  }
+  
 }
 
 

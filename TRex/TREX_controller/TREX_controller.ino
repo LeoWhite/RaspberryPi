@@ -66,6 +66,7 @@ void setup()
     TCCR2B = TCCR2B & B11111000 | B00000110; pwmfreq=6;    // set timer 2 divisor to  256 for PWM frequency of    122.070312500 Hz
   //TCCR2B = TCCR2B & B11111000 | B00000111; pwmfreq=7;    // set timer 2 divisor to 1024 for PWM frequency of     30.517578125 Hz
 
+ Serial.begin(9600);
 
   //all IO pins are input by default on powerup --------- configure motor control pins for output -------- pwm autoconfigures -----------
 
@@ -93,10 +94,10 @@ void setup()
   //----------------------------------------------------- Test for Bluetooth module ------------------------------------------------------
   if(mode==0)                                          // no RC signals detected
   {
-    BluetoothConfig();                                 // attempts to configure bluetooth module - changes to mode 2 if successful
+    //BluetoothConfig();                                 // attempts to configure bluetooth module - changes to mode 2 if successful
     if(mode==2) MotorBeep(2);                          // generate 2 beeps from the motors to indicate bluetooth mode enabled
   }
-  
+    
   //----------------------------------------------------- Configure for I²C control ------------------------------------------------------
   if(mode==0)                                          // no RC signal or bluetooth module detected
   {
@@ -144,7 +145,7 @@ void loop()
   //----------------------------------------------------- Bluetooth mode ----------------------------------------------------------------
   if(mode==2)
   {
-    Bluetooth();                                       // control using Android phone and sample app
+//    Bluetooth();                                       // control using Android phone and sample app
     return;
   }
   

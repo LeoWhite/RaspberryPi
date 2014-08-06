@@ -7,9 +7,15 @@ void I2Ccommand(int recvflag)
   
   do                                                                           // check for start byte
   {
-    b=Wire.read();                                                             // read a byte from the buffer
-    if(b!=startbyte || recvflag!=27)errorflag = errorflag | 1;                 // if byte does not equal startbyte or Master request incorrect number of bytes then generate error
+    b=Wire.read();    
+    // read a byte from the buffer
+    if(b!=startbyte || (recvflag!=27 && recvflag != 1))errorflag = errorflag | 1;                 // if byte does not equal startbyte or Master request incorrect number of bytes then generate error    
   } while (errorflag>0 && Wire.available()>0);                                 // if errorflag>0 then empty buffer of corrupt data
+  
+  if(recvflag == 1) {
+    // Status request. Ignore
+    return;
+  }
   
   if(errorflag>0)                                                              // corrupt data received 
   {
@@ -19,6 +25,7 @@ void I2Ccommand(int recvflag)
   //----------------------------------------------------------------------------- valid data packet received ------------------------------
   
   b=Wire.read();                                                               // read pwmfreq from the buffer
+
   if(b>0 && b<8)                                                               // if value is valid (1-7)  
   {
     pwmfreq=b;                                                                 // update pwmfreq
@@ -117,6 +124,7 @@ void I2Ccommand(int recvflag)
   mode=0;                                                                      // breaks out of Shutdown mode when I²C command is given
   Motors();                                                                    // update brake, speed and direction of motors
   Servos();                                                                    // update servo positions
+  Serial.println("");
 }
 
 
