@@ -43,7 +43,7 @@ byte pwmfreq;                                          // value from 1-7
 byte i2cfreq;                                          // I2C clock frequency can be 100kHz(default) or 400kHz
 byte I2Caddress;                                       // I2C slave address
 int lmspeed,rmspeed;                                   // left and right motor speeds -255 to +255
-byte lmbrake,rmbrake;                                  // left and right brakes - non zero values enable brake
+boolean lmbrake = false,rmbrake = false;                                  // left and right brakes - non zero values enable brake
 int lmcur,rmcur;                                       // left and right motor current
 int lmenc = 0,rmenc = 0;                                       // left and right encoder values
 int volts;                                             // battery voltage*10 (accurate to 1 decimal place)
@@ -55,7 +55,19 @@ int sensitivity=50;                                    // minimum magnitude requ
 
 
 void setup() {
+//      TCCR2B = TCCR2B & B11111000 | B00000110; pwmfreq=6;    // set timer 2 divisor to  256 for PWM frequency of    122.070312500 Hz
+
     Serial.begin(9600);         // start serial for output
+
+  // Configure motor pins    
+  pinMode(lmpwmpin,OUTPUT);                            // configure left  motor PWM       pin for output
+  pinMode(lmdirpin,OUTPUT);                            // configure left  motor direction pin for output
+  pinMode(lmbrkpin,OUTPUT);                            // configure left  motor brake     pin for output
+  
+  pinMode(rmpwmpin,OUTPUT);                            // configure right motor PWM       pin for output
+  pinMode(rmdirpin,OUTPUT);                            // configure right motor direction pin for output
+  pinMode(rmbrkpin,OUTPUT);                            // configure right motor brake     pin for output
+    
     // initialize i2c as slave
     Wire.begin(SLAVE_ADDRESS);
 
@@ -119,9 +131,9 @@ void loop() {
 
     // Set speed to zero and brakes to on
     lmspeed = 0;
-    lmbrake=1;
+    lmbrake=true;
     rmspeed = 0;
-    rmbrake=1;
+    rmbrake=true;
     
     Motors();
     
@@ -141,7 +153,7 @@ void loop() {
     if(i>-256 && i<256)
     {
       lmspeed=i;                                                                 // read new speed for   left  motor
-      lmbrake=0;
+      lmbrake=false;
       gotLeft = true;
     }
 
@@ -149,7 +161,7 @@ void loop() {
     if(i>-256 && i<256)
     {
       rmspeed=i;                                                                 // read new speed for   left  motor
-      rmbrake=0;
+      rmbrake=false;
       gotRight = true;
     }
 
@@ -165,6 +177,7 @@ void loop() {
 
     requestedCmd = 0;   // set requestd cmd to 0 disabling processing in next loop
   }
+  
 }
 
 // callback for received data
@@ -172,6 +185,11 @@ void receiveData(int howMany){
   int cmdRcvd = -1;
   int argIndex = -1; 
   argsCnt = 0;
+
+  if(requestedCmd) {
+    Serial.println("Command lost!");
+  }
+
 
   if (Wire.available()){
     cmdRcvd = Wire.read();                 // receive first byte - command assumed
@@ -184,8 +202,6 @@ void receiveData(int howMany){
         ; // implement logging error: "too many arguments"
       }
       argsCnt = argIndex+1;  
-    Serial.println(argsCnt);
-  
     }
   }
   else{
@@ -205,6 +221,7 @@ void receiveData(int howMany){
     Serial.println("not supported");
     return;
   }
+  
   requestedCmd = cmdRcvd;
   // now main loop code should pick up a command to execute and prepare required response when master waits before requesting response
 }
@@ -215,13 +232,20 @@ void sendData(){
 }
 
 void Motors()
-{
-  digitalWrite(lmbrkpin,lmbrake>0);                     // if left brake>0 then engage electronic braking for left motor
+{ 
+  static boolean oldlmbrake = true, oldrmbrake = true;
+   
+  if(oldlmbrake != lmbrake) {
+    digitalWrite(lmbrkpin,lmbrake);                     // if left brake>0 then engage electronic braking for left motor
+    oldlmbrake = lmbrake;
+  }
   digitalWrite(lmdirpin,lmspeed>0);                     // if left speed>0 then left motor direction is forward else reverse
   analogWrite (lmpwmpin,abs(lmspeed));                  // set left PWM to absolute value of left speed - if brake is engaged then PWM controls braking
   if(lmbrake>0 && lmspeed==0) lmenc=0;                  // if left brake is enabled and left speed=0 then reset left encoder counter
   
-  digitalWrite(rmbrkpin,rmbrake>0);                     // if right brake>0 then engage electronic braking for right motor
+  if(oldrmbrake != rmbrake) {
+    digitalWrite(rmbrkpin,rmbrake);                     // if right brake>0 then engage electronic braking for right motor#
+  }
   digitalWrite(rmdirpin,rmspeed>0);                     // if right speed>0 then right motor direction is forward else reverse
   analogWrite (rmpwmpin,abs(rmspeed));                  // set right PWM to absolute value of right speed - if brake is engaged then PWM controls braking
   if(rmbrake>0 && rmspeed==0) rmenc=0;                  // if right brake is enabled and right speed=0 then reset right encoder counter

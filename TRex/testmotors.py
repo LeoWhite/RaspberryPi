@@ -17,7 +17,7 @@ def outputStatus():
   global i2cConnect, i2cFD
   
   os.write(i2cConnect, "\x0F")
-  time.sleep(0.01)
+  time.sleep(0.15)
   status = i2cFD.read(24)
   
   currentStatus = StatusStruct._make(struct.unpack('!bbHhhhhhhhhhh', status))
@@ -69,7 +69,11 @@ setMotors(0xFF, 0xFF)
 
 time.sleep(0.5)
 
-setMotors(-120, --120)
+setMotors(0, 0)
+
+time.sleep(0.5)
+
+setMotors(-120, -120)
 
 time.sleep(0.5)
 
