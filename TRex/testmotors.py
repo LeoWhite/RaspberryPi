@@ -5,70 +5,75 @@ import time
 import os, sys
 
 address = 0x07
-#answer = bytearray(24)
 from collections import namedtuple
 import struct
 
+# Define the status structure
+StatusStruct = namedtuple("StatusStruct", "start errorFlag batteryVoltage leftMotorCurrent leftMotorEncoder rightMotorCurrent rightMotorEncoder xAxis yAxis zAxis deltaX deltaY deltaZ")
+SetMotorStruct = namedtuple("SetMotorStruct", "command leftMotor rightMotor")
+
+# output the current status
+def outputStatus():
+  global i2cConnect, i2cFD
+  
+  os.write(i2cConnect, "\x0F")
+  time.sleep(0.01)
+  status = i2cFD.read(24)
+  
+  currentStatus = StatusStruct._make(struct.unpack('!bbHhhhhhhhhhh', status))
+  print currentStatus
+  
+# Stop the robot
+def stop():
+  global i2cConnect, i2cFD
+
+  # Stop the motors
+  os.write(i2cConnect, "\x11")
+  time.sleep(0.1)
+  result = wiringpi.wiringPiI2CRead(i2cConnect)
+
+  if result != 0x11:
+    print "Failed to stop!"
+    
+# Set the motors
+def setMotors(leftMotor, rightMotor):
+  global i2cConnect, i2cFD
+  
+  os.write(i2cConnect, struct.pack("!bhh", 0x12, leftMotor, rightMotor))
+  time.sleep(0.1)
+  result = wiringpi.wiringPiI2CRead(i2cConnect)
+
+  if result != 0x12:
+    print "Failed to set motors!"
+
+        
+# Configure wiring pi  
 wiringpi.wiringPiSetupPhys()
 
+# Open the i2C connection 
 i2cConnect = wiringpi.wiringPiI2CSetup(address)
 i2cFD = os.fdopen(i2cConnect, "rw", 0)
 
-StatusStruct = namedtuple("StatusStruct", "start errorFlag batteryVoltage leftMotorCurrent leftMotorEncoder rightMotorCurrent rightMotorEncoder xAxis yAxis zAxis deltaX deltaY deltaZ")
 
 # Read in current status
-os.write(i2cConnect, "\x0F")
-time.sleep(0.01)
-answer = i2cFD.read(24)
+outputStatus()
 
-currentStatus = StatusStruct._make(struct.unpack('!bbHhhhhhhhhhh', answer))
-print currentStatus
-time.sleep(0.01)
-
-# Stop the motors
-os.write(i2cConnect, "\x11")
-time.sleep(0.1)
-stopped = wiringpi.wiringPiI2CRead(i2cConnect)
-
-if stopped != 0x11:
-  print "Failed to stop!"
-  print stopped[0]
-
-
-os.write(i2cConnect, "\x12\x00\x7F\x00\x7F")
-time.sleep(0.1)
-stopped = wiringpi.wiringPiI2CRead(i2cConnect)
-
-if stopped != 0x12:
-  print "Failed to set motors!"
-  print stopped[0]
+setMotors(0x7F, 0x7F)
 
 time.sleep(0.5)
 
-os.write(i2cConnect, "\x0F")
-time.sleep(0.01)
-answer = i2cFD.read(24)
+# Read in current status
+outputStatus()
 
-currentStatus = StatusStruct._make(struct.unpack('!bbHhhhhhhhhhh', answer))
-print currentStatus
-
-os.write(i2cConnect, "\x12\x00\xFF\x00\xFF")
-time.sleep(0.1)
-stopped = wiringpi.wiringPiI2CRead(i2cConnect)
+setMotors(0xFF, 0xFF)
 
 time.sleep(0.5)
 
-os.write(i2cConnect, "\x11")
-time.sleep(0.1)
-stopped = wiringpi.wiringPiI2CRead(i2cConnect)
+setMotors(-120, --120)
 
-if stopped != 0x11:
-  print "Failed to stop!"
-  print stopped[0]
+time.sleep(0.5)
 
-os.write(i2cConnect, "\x0F")
-time.sleep(0.01)
-answer = i2cFD.read(24)
+stop()
 
-currentStatus = StatusStruct._make(struct.unpack('!bbHhhhhhhhhhh', answer))
-print currentStatus
+# Read in current status
+outputStatus()
