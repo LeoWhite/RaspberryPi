@@ -4,7 +4,10 @@
 // >> put this into a header file you include at the beginning for better clarity
 enum { 
   I2C_CMD_GET_STATE = 0xF,
-  I2C_CMD_SET_STATE = 2
+  I2C_CMD_SET_STATE = 0x10,
+  I2C_CMD_STOP = 0x11,
+  I2C_CMD_SET_MOTORS = 0x12,
+  
 };
 
 enum { 
@@ -14,7 +17,9 @@ enum {
 
 extern const byte supportedI2Ccmd[] = { 
   I2C_CMD_GET_STATE,
-  2
+  I2C_CMD_SET_STATE,
+  I2C_CMD_STOP,
+  I2C_CMD_SET_MOTORS
 };
 
 #define SLAVE_ADDRESS 0x07
@@ -60,7 +65,6 @@ void setup() {
 }
 
 void loop() {
-  
   if(requestedCmd == I2C_CMD_GET_STATE){
     volts=analogRead(voltspin)*10/3.357; 
     lmcur=(analogRead(lmcurpin)-511)*48.83;
@@ -108,6 +112,54 @@ void loop() {
   requestedCmd = 0;
 
   }
+  else if(requestedCmd == I2C_CMD_STOP){    
+    // Send back the command to confirm we recieved it
+    i2cResponseLen = 0;
+    i2cResponse[i2cResponseLen++] = I2C_CMD_STOP;    
+
+    // Set speed to zero and brakes to on
+    lmspeed = 0;
+    lmbrake=1;
+    rmspeed = 0;
+    rmbrake=1;
+    
+    Motors();
+    
+    requestedCmd = 0;
+  
+  }
+  else if(requestedCmd == I2C_CMD_SET_MOTORS && 4 == argsCnt){    
+    int i;
+    boolean gotLeft = false, gotRight = false;
+
+    
+    // Send back the command to confirm we recieved it
+    i2cResponseLen = 0;
+    i2cResponse[i2cResponseLen++] = I2C_CMD_SET_MOTORS;    
+
+    i=i2cArgs[0]*256+i2cArgs[1];                                               // read integer from I²C buffer
+    if(i>-256 && i<256)
+    {
+      lmspeed=i;                                                                 // read new speed for   left  motor
+      lmbrake=0;
+      gotLeft = true;
+    }
+
+    i=i2cArgs[2]*256+i2cArgs[3];                                               // read integer from I²C buffer
+    if(i>-256 && i<256)
+    {
+      rmspeed=i;                                                                 // read new speed for   left  motor
+      rmbrake=0;
+      gotRight = true;
+    }
+
+    if(gotLeft && gotRight) {
+      Motors();
+    }
+    
+    requestedCmd = 0;
+  
+  }
   else if (requestedCmd != 0){
     // log the requested function is unsupported (e.g. by writing to serial port or soft serial
 
@@ -132,6 +184,8 @@ void receiveData(int howMany){
         ; // implement logging error: "too many arguments"
       }
       argsCnt = argIndex+1;  
+    Serial.println(argsCnt);
+  
     }
   }
   else{
@@ -148,6 +202,7 @@ void receiveData(int howMany){
 
   if (fcnt<0){
     // implement logging error: "command not supported"
+    Serial.println("not supported");
     return;
   }
   requestedCmd = cmdRcvd;
@@ -156,6 +211,18 @@ void receiveData(int howMany){
 // callback for sending data
 void sendData(){
   Wire.write(i2cResponse, i2cResponseLen);
+  i2cResponseLen = 0;
 }
 
-
+void Motors()
+{
+  digitalWrite(lmbrkpin,lmbrake>0);                     // if left brake>0 then engage electronic braking for left motor
+  digitalWrite(lmdirpin,lmspeed>0);                     // if left speed>0 then left motor direction is forward else reverse
+  analogWrite (lmpwmpin,abs(lmspeed));                  // set left PWM to absolute value of left speed - if brake is engaged then PWM controls braking
+  if(lmbrake>0 && lmspeed==0) lmenc=0;                  // if left brake is enabled and left speed=0 then reset left encoder counter
+  
+  digitalWrite(rmbrkpin,rmbrake>0);                     // if right brake>0 then engage electronic braking for right motor
+  digitalWrite(rmdirpin,rmspeed>0);                     // if right speed>0 then right motor direction is forward else reverse
+  analogWrite (rmpwmpin,abs(rmspeed));                  // set right PWM to absolute value of right speed - if brake is engaged then PWM controls braking
+  if(rmbrake>0 && rmspeed==0) rmenc=0;                  // if right brake is enabled and right speed=0 then reset right encoder counter
+}
