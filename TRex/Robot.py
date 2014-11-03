@@ -3,7 +3,7 @@
 import pygame
 import wiringpi2 as wiringpi
 import time
-import os, sys
+import os, sys, math
 from collections import namedtuple
 import struct
 
@@ -122,12 +122,12 @@ try:
           
           if event.type == pygame.JOYAXISMOTION:
             if event.axis == 1:
-              NewLeftTrack = event.value * 0xFF
+              NewLeftTrack = math.ceil(event.value * 0x7F)
               if NewLeftTrack != LeftTrack:
                 LeftTrack = NewLeftTrack
                 UpdateMotors = 1
             elif event.axis == 3:
-              NewRightTrack = event.value * 0xFF
+              NewRightTrack = math.ceil(event.value * 0x7F)
               if NewRightTrack != RightTrack:
                 RightTrack = NewRightTrack
                 UpdateMotors = 1

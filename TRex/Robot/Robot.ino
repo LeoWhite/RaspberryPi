@@ -45,6 +45,10 @@ byte I2Caddress;                                       // I2C slave address
 int lmspeed,rmspeed;                                   // left and right motor speeds -255 to +255
 boolean lmbrake = false,rmbrake = false;                                  // left and right brakes - non zero values enable brake
 int lmcur,rmcur;                                       // left and right motor current
+int lmcurmax = 8000;                                   // Max current that can be pulled from the batteries before we stop
+unsigned long lastoverload = 0;                            // Time we last overloaded
+int overloadtime = 100;
+
 int lmenc = 0,rmenc = 0;                                       // left and right encoder values
 int volts;                                             // battery voltage*10 (accurate to 1 decimal place)
 int xaxis,yaxis,zaxis;                                 // X, Y, Z accelerometer readings
@@ -77,10 +81,22 @@ void setup() {
 }
 
 void loop() {
+  // Read in the current amps
+  lmcur=(analogRead(lmcurpin)-511)*48.83;
+  rmcur=(analogRead(rmcurpin)-511)*48.83;  
+  
+  // Check if we've gone over the limit
+  if(lmcur >= lmcurmax || rmcur >= lmcurmax) {
+    // Mark the fact that we have overloaded and trigger
+    // an update of the Motors, this will cause them to stop
+    lastoverload = millis();
+    Motors();    
+  }
+  
   if(requestedCmd == I2C_CMD_GET_STATE){
     volts=analogRead(voltspin)*10/3.357; 
-    lmcur=(analogRead(lmcurpin)-511)*48.83;
-    rmcur=(analogRead(rmcurpin)-511)*48.83;  
+//    lmcur=(analogRead(lmcurpin)-511)*48.83;
+//    rmcur=(analogRead(rmcurpin)-511)*48.83;  
     xaxis=analogRead(axisxpin);                                 // read accelerometer - note analog read takes 260uS for each axis
     yaxis=analogRead(axisxpin);
     zaxis=analogRead(axisxpin);
@@ -234,7 +250,17 @@ void sendData(){
 void Motors()
 { 
   static boolean oldlmbrake = true, oldrmbrake = true;
-   
+
+  // Are we in an 'overload' state?
+  if((millis() - lastoverload) < overloadtime)
+  {
+    // Set speed to zero and brakes to on
+    lmspeed = 0;
+    lmbrake=true;
+    rmspeed = 0;
+    rmbrake=true;
+  }
+  
   if(oldlmbrake != lmbrake) {
     digitalWrite(lmbrkpin,lmbrake);                     // if left brake>0 then engage electronic braking for left motor
     oldlmbrake = lmbrake;
