@@ -1,3 +1,9 @@
+#define NO_PORTB_PINCHANGES // to indicate that port b will not be used for pin change interrupts
+#define NO_PORTC_PINCHANGES // to indicate that port c will not be used for pin change interrupts
+
+
+#include <PinChangeInt.h>
+
 #include <Wire.h>
 #include "IOpins.h"
 
@@ -49,7 +55,7 @@ int lmcurmax = 8000;                                   // Max current that can b
 unsigned long lastoverload = 0;                            // Time we last overloaded
 int overloadtime = 100;
 
-int lmenc = 0,rmenc = 0;                                       // left and right encoder values
+volatile int  lmenc = 0,rmenc = 0;                                       // left and right encoder values
 int volts;                                             // battery voltage*10 (accurate to 1 decimal place)
 int xaxis,yaxis,zaxis;                                 // X, Y, Z accelerometer readings
 int deltx,delty,deltz;                                 // X, Y, Z impact readings 
@@ -71,13 +77,21 @@ void setup() {
   pinMode(rmpwmpin,OUTPUT);                            // configure right motor PWM       pin for output
   pinMode(rmdirpin,OUTPUT);                            // configure right motor direction pin for output
   pinMode(rmbrkpin,OUTPUT);                            // configure right motor brake     pin for output
-    
-    // initialize i2c as slave
-    Wire.begin(SLAVE_ADDRESS);
+  
+  // Configure motor encoders
+  pinMode(lmencpin, INPUT)  ;
+  digitalWrite(lmencpin, HIGH);
+  PCintPort::attachInterrupt(lmencpin, &leftEncoder, RISING);
+  pinMode(rmencpin, INPUT)  ;
+  digitalWrite(rmencpin, HIGH);
+  PCintPort::attachInterrupt(rmencpin, &rightEncoder, RISING);
+  
+  // initialize i2c as slave
+  Wire.begin(SLAVE_ADDRESS);
 
-    // define callbacks for i2c communication
-    Wire.onReceive(receiveData);
-    Wire.onRequest(sendData);
+  // define callbacks for i2c communication
+  Wire.onReceive(receiveData);
+  Wire.onRequest(sendData);
 }
 
 void loop() {
@@ -276,3 +290,15 @@ void Motors()
   analogWrite (rmpwmpin,abs(rmspeed));                  // set right PWM to absolute value of right speed - if brake is engaged then PWM controls braking
   if(rmbrake>0 && rmspeed==0) rmenc=0;                  // if right brake is enabled and right speed=0 then reset right encoder counter
 }
+
+
+void leftEncoder() {
+  lmenc++;
+}
+
+void rightEncoder() {
+  rmenc++;
+}
+
+
+
