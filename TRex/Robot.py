@@ -17,15 +17,46 @@ pygame.init()
 StatusStruct = namedtuple("StatusStruct", "start errorFlag batteryVoltage leftMotorCurrent leftMotorEncoder rightMotorCurrent rightMotorEncoder xAxis yAxis zAxis deltaX deltaY deltaZ")
 SetMotorStruct = namedtuple("SetMotorStruct", "command leftMotor rightMotor")
 
+def sendMessage(cmd, message):
+  newMessage =  cmd + message
+  
+  # Calculate checksum
+  CS = len(newMessage)
+  for i in range(0, len(newMessage)):
+    CS = (CS & 0xFF ^ ord(newMessage[i:i+1]) & 0xFF)
+    
+  finalMessage = newMessage + chr(CS)
+    
+  os.write(i2cConnect, finalMessage)
+  
+def readMessage(length):
+    # Read in data plus checksum
+    status = i2cFD.read(length + 1)
+    
+    if len(status) == (length + 1):
+      CS = length;
+      for i in range(0, length):
+        CS = (CS & 0xFF ^ ord(status[i:i+1]) & 0xFF)
+      
+      if CS == ord(status[length:length+1]):
+        # Process checksum,
+        return status[:length]
+      else:
+        print "Checksum mismatch!"
+        
+    return 0
+        
 # output the current status of the robot
 def outputStatus():
   global i2cConnect, i2cFD
   
   try:
-    os.write(i2cConnect, "\x0F")
+    sendMessage("\x0F", "")
+
+    #os.write(i2cConnect, "\x0F")
     # Reading in the acceleromotor readings takes time
     time.sleep(0.001)
-    status = i2cFD.read(24)
+    status = readMessage(24)
   
     currentStatus = StatusStruct._make(struct.unpack('!bbHhhhhhhhhhh', status))
     print currentStatus
@@ -46,10 +77,10 @@ def stop():
 
   # Stop the motors
   try:
-    os.write(i2cConnect, "\x11")
+    sendMessage("\x11", "")
     time.sleep(0.0001)
-    result = wiringpi.wiringPiI2CRead(i2cConnect)
-    if result != 0x11:
+    result = readMessage(1);
+    if ord(result[0:1]) != 0x11:
       print "Failed to stop!"
   except:
     print "Failed to stop motors!"
@@ -61,10 +92,10 @@ def setMotors(leftMotor, rightMotor):
   global i2cConnect, i2cFD
   
   try:
-    os.write(i2cConnect, struct.pack("!bhh", 0x12, leftMotor, rightMotor))
+    sendMessage("\x12", struct.pack("!hh", leftMotor, rightMotor))
     time.sleep(0.0001)
-    result = wiringpi.wiringPiI2CRead(i2cConnect)
-    if result != 0x12:
+    result = readMessage(1);
+    if ord(result[0:1]) != 0x12:
       print "Failed to set motors!"
   except:
     print "Failed to set motors!"

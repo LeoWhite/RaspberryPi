@@ -1,10 +1,6 @@
-#define NO_PORTB_PINCHANGES // to indicate that port b will not be used for pin change interrupts
-#define NO_PORTC_PINCHANGES // to indicate that port c will not be used for pin change interrupts
-
-
-#include <PinChangeInt.h>
 
 #include <Wire.h>
+#include <avr/wdt.h>
 #include "IOpins.h"
 
 // >> put this into a header file you include at the beginning for better clarity
@@ -65,6 +61,8 @@ int sensitivity=50;                                    // minimum magnitude requ
 
 
 void setup() {
+  // Reset the watchdog
+  wdt_disable();
 //      TCCR2B = TCCR2B & B11111000 | B00000110; pwmfreq=6;    // set timer 2 divisor to  256 for PWM frequency of    122.070312500 Hz
 
     Serial.begin(9600);         // start serial for output
@@ -79,12 +77,7 @@ void setup() {
   pinMode(rmbrkpin,OUTPUT);                            // configure right motor brake     pin for output
   
   // Configure motor encoders
-  pinMode(lmencpin, INPUT)  ;
-  digitalWrite(lmencpin, HIGH);
-  PCintPort::attachInterrupt(lmencpin, &leftEncoder, RISING);
-  pinMode(rmencpin, INPUT)  ;
-  digitalWrite(rmencpin, HIGH);
-  PCintPort::attachInterrupt(rmencpin, &rightEncoder, RISING);
+  encodersSetup();
   
   // initialize i2c as slave
   Wire.begin(SLAVE_ADDRESS);
@@ -92,6 +85,9 @@ void setup() {
   // define callbacks for i2c communication
   Wire.onReceive(receiveData);
   Wire.onRequest(sendData);
+  
+  // Enable the watchdog
+  wdt_enable(WDTO_1S);
 }
 
 void loop() {
@@ -208,6 +204,8 @@ void loop() {
     requestedCmd = 0;   // set requestd cmd to 0 disabling processing in next loop
   }
   
+  // Reset the watchdog tier
+  wdt_reset();
 }
 
 // callback for received data
@@ -252,11 +250,44 @@ void receiveData(int howMany){
     return;
   }
   
+  // Calculate the checksum
+  uint8_t CS = (argsCnt - 1) + 1;
+  
+  // Starts with the length, followed by the command, followed by all bits of the message
+  // excluding the checksum
+  CS^=cmdRcvd;
+  for (int i = 0; i<(argsCnt - 1); i++){
+    CS^=i2cArgs[i];
+  } 
+  
+  // Does it match?
+  if(CS != i2cArgs[argsCnt - 1]) {    
+    // Perform a stop
+    Serial.print("invalid checksum");
+    lmspeed = 0;
+    lmbrake=true;
+    rmspeed = 0;
+    rmbrake=true;
+    Motors();    
+    return;
+  }
+  
+  // We don't include the checksum in the message
+  argsCnt--;
+  
   requestedCmd = cmdRcvd;
   // now main loop code should pick up a command to execute and prepare required response when master waits before requesting response
 }
 // callback for sending data
-void sendData(){
+void sendData(){  
+  // Generate the checksum
+  // IMPROVE: calculate when generating the message
+  uint8_t CS = i2cResponseLen;
+  for (int i = 0; i<i2cResponseLen; i++){
+    CS^=i2cResponse[i];
+  } 
+
+  i2cResponse[i2cResponseLen++] = CS;  
   Wire.write(i2cResponse, i2cResponseLen);
   i2cResponseLen = 0;
 }
@@ -289,16 +320,17 @@ void Motors()
   digitalWrite(rmdirpin,rmspeed>0);                     // if right speed>0 then right motor direction is forward else reverse
   analogWrite (rmpwmpin,abs(rmspeed));                  // set right PWM to absolute value of right speed - if brake is engaged then PWM controls braking
   if(rmbrake>0 && rmspeed==0) rmenc=0;                  // if right brake is enabled and right speed=0 then reset right encoder counter
+  Serial.print("Motors :");
+  wdt_reset();  
+  Serial.print(lmspeed);
+  wdt_reset();  
+  Serial.print(":");
+  wdt_reset();  
+  Serial.println(rmspeed);
+    wdt_reset();
 }
 
 
-void leftEncoder() {
-  lmenc++;
-}
-
-void rightEncoder() {
-  rmenc++;
-}
 
 
 
