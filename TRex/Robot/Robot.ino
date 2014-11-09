@@ -1,6 +1,5 @@
 
 #include <Wire.h>
-#include <avr/wdt.h>
 #include "IOpins.h"
 
 // >> put this into a header file you include at the beginning for better clarity
@@ -61,8 +60,6 @@ int sensitivity=50;                                    // minimum magnitude requ
 
 
 void setup() {
-  // Reset the watchdog
-  wdt_disable();
 //      TCCR2B = TCCR2B & B11111000 | B00000110; pwmfreq=6;    // set timer 2 divisor to  256 for PWM frequency of    122.070312500 Hz
 
     Serial.begin(9600);         // start serial for output
@@ -85,9 +82,6 @@ void setup() {
   // define callbacks for i2c communication
   Wire.onReceive(receiveData);
   Wire.onRequest(sendData);
-  
-  // Enable the watchdog
-  wdt_enable(WDTO_1S);
 }
 
 void loop() {
@@ -203,25 +197,24 @@ void loop() {
 
     requestedCmd = 0;   // set requestd cmd to 0 disabling processing in next loop
   }
-  
-  // Reset the watchdog tier
-  wdt_reset();
 }
 
 // callback for received data
 void receiveData(int howMany){
   int cmdRcvd = -1;
   int argIndex = -1; 
+  int availableBytes = 0;
   argsCnt = 0;
 
   if(requestedCmd) {
     Serial.println("Command lost!");
   }
 
-
-  if (Wire.available()){
+    Serial.print("HM:");
+    Serial.println(howMany);
+  if (howMany) {
     cmdRcvd = Wire.read();                 // receive first byte - command assumed
-    while(Wire.available()){               // receive rest of tramsmission from master assuming arguments to the command
+    while(howMany--){               // receive rest of tramsmission from master assuming arguments to the command
       if (argIndex < I2C_MSG_ARGS_MAX){
         argIndex++;
         i2cArgs[argIndex] = Wire.read();
@@ -236,6 +229,9 @@ void receiveData(int howMany){
     // implement logging error: "empty request"
     return;
   }
+    Serial.print("AC:");
+    Serial.println(argsCnt);
+  
   // validating command is supported by slave
   int fcnt = -1;
   for (int i = 0; i < sizeof(supportedI2Ccmd); i++) {
@@ -321,13 +317,9 @@ void Motors()
   analogWrite (rmpwmpin,abs(rmspeed));                  // set right PWM to absolute value of right speed - if brake is engaged then PWM controls braking
   if(rmbrake>0 && rmspeed==0) rmenc=0;                  // if right brake is enabled and right speed=0 then reset right encoder counter
   Serial.print("Motors :");
-  wdt_reset();  
   Serial.print(lmspeed);
-  wdt_reset();  
   Serial.print(":");
-  wdt_reset();  
   Serial.println(rmspeed);
-    wdt_reset();
 }
 
 
