@@ -1,4 +1,4 @@
-
+#include <Adafruit_NeoPixel.h>
 #include <Wire.h>
 #include "IOpins.h"
 
@@ -58,11 +58,13 @@ int magnitude;                                         // impact magnitude
 byte devibrate=50;                                     // number of 2mS intervals to wait after an impact has occured before a new impact can be recognized
 int sensitivity=50;                                    // minimum magnitude required to register as an impact
 
+// Light strip for the rear light
+Adafruit_NeoPixel rearNeoStrip = Adafruit_NeoPixel(8, RearLightPin, NEO_GRB + NEO_KHZ800);
 
 void setup() {
 //      TCCR2B = TCCR2B & B11111000 | B00000110; pwmfreq=6;    // set timer 2 divisor to  256 for PWM frequency of    122.070312500 Hz
 
-    Serial.begin(9600);         // start serial for output
+    Serial.begin(115200);         // start serial for output
 
   // Configure motor pins    
   pinMode(lmpwmpin,OUTPUT);                            // configure left  motor PWM       pin for output
@@ -210,10 +212,9 @@ void receiveData(int howMany){
     Serial.println("Command lost!");
   }
 
-    Serial.print("HM:");
-    Serial.println(howMany);
   if (howMany) {
     cmdRcvd = Wire.read();                 // receive first byte - command assumed
+    howMany--; // Skip the 'command' byte
     while(howMany--){               // receive rest of tramsmission from master assuming arguments to the command
       if (argIndex < I2C_MSG_ARGS_MAX){
         argIndex++;
@@ -229,8 +230,6 @@ void receiveData(int howMany){
     // implement logging error: "empty request"
     return;
   }
-    Serial.print("AC:");
-    Serial.println(argsCnt);
   
   // validating command is supported by slave
   int fcnt = -1;
@@ -259,7 +258,8 @@ void receiveData(int howMany){
   // Does it match?
   if(CS != i2cArgs[argsCnt - 1]) {    
     // Perform a stop
-    Serial.print("invalid checksum");
+    Serial.print("invalid checksum:");
+    Serial.println(CS);
     lmspeed = 0;
     lmbrake=true;
     rmspeed = 0;
