@@ -58,9 +58,6 @@ int magnitude;                                         // impact magnitude
 byte devibrate=50;                                     // number of 2mS intervals to wait after an impact has occured before a new impact can be recognized
 int sensitivity=50;                                    // minimum magnitude required to register as an impact
 
-// Light strip for the rear light
-Adafruit_NeoPixel rearNeoStrip = Adafruit_NeoPixel(8, RearLightPin, NEO_GRB + NEO_KHZ800);
-
 void setup() {
 //      TCCR2B = TCCR2B & B11111000 | B00000110; pwmfreq=6;    // set timer 2 divisor to  256 for PWM frequency of    122.070312500 Hz
 
@@ -86,12 +83,7 @@ void setup() {
   Wire.onRequest(sendData);
   
   // Start the NeoPixel
-  rearNeoStrip.begin();
-  rearNeoStrip.show();
-  
-  rearNeoStrip.setPixelColor(0, rearNeoStrip.Color(255, 0, 0)); 
-  rearNeoStrip.setPixelColor(7, rearNeoStrip.Color(255, 0, 0)); 
-  rearNeoStrip.show();
+  rearLightSetup();
 }
 
 void loop() {
@@ -327,61 +319,7 @@ void Motors()
   
   
   // Update the LEDS
-  //if(lmspeed>=0)
-  for(uint8_t i = 0; i < 1; i++)
-  {
-    uint8_t LED0 = 0, LED1 = 0, LED2 = 0, LED3 = 0;
-    uint8_t power = 0, dir = 0;
-    
-    if(i == 0) {
-      power = abs(lmspeed);
-      dir = lmspeed > 0;
-    }
-    else {
-      power = abs(rmspeed);
-      dir = rmspeed > 0;
-    }
-    
-    if(power == 0xFF) {
-      LED0 = 0xFF;
-      LED1 = 0xFF;
-      LED2 = 0xFF;
-      LED3 = 0xFF;
-    }
-    else if(power > 0xBF) {
-      LED0 = 0xFF;
-      LED1 = 0xFF;
-      LED2 = 0xFF;
-      LED3 = (power - 0xBF);
-    }
-    else if(power > 0x7F) {
-      LED0 = 0xFF;
-      LED1 = 0xFF;
-      LED2 = (power - 0x7F);
-    }
-    else if(power > 0x3F) {
-      LED0 = 0xFF;
-      LED1 = (power - 0x3F);
-    }
-    else {
-      LED0 = (power & 0x3F);
-    }
-    
-    if(lmspeed <= 0) {  
-      rearNeoStrip.setPixelColor(4, rearNeoStrip.Color(LED0, LED0, LED0)); 
-      rearNeoStrip.setPixelColor(5, rearNeoStrip.Color(LED1, LED1, LED1)); 
-      rearNeoStrip.setPixelColor(6, rearNeoStrip.Color(LED2, LED2, LED2)); 
-      rearNeoStrip.setPixelColor(7, rearNeoStrip.Color(LED3, LED3, LED3)); 
-    }
-    else {
-      rearNeoStrip.setPixelColor(4, rearNeoStrip.Color(LED0, 0, 0)); 
-      rearNeoStrip.setPixelColor(5, rearNeoStrip.Color(LED1, 0, 0)); 
-      rearNeoStrip.setPixelColor(6, rearNeoStrip.Color(LED2, 0, 0)); 
-      rearNeoStrip.setPixelColor(7, rearNeoStrip.Color(LED3, 0, 0));       
-    }
-    
-    rearNeoStrip.show();    
-  }
+  rearLightUpdate();
   
   Serial.print("Motors :");
   Serial.print(lmspeed);
