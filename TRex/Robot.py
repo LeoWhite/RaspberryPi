@@ -153,12 +153,12 @@ try:
           
           if event.type == pygame.JOYAXISMOTION:
             if event.axis == 1:
-              NewLeftTrack = math.ceil(event.value * 0x7F)
+              NewLeftTrack = math.ceil(event.value * 0xFF)
               if NewLeftTrack != LeftTrack:
                 LeftTrack = NewLeftTrack
                 UpdateMotors = 1
             elif event.axis == 3:
-              NewRightTrack = math.ceil(event.value * 0x7F)
+              NewRightTrack = math.ceil(event.value * 0xFF)
               if NewRightTrack != RightTrack:
                 RightTrack = NewRightTrack
                 UpdateMotors = 1

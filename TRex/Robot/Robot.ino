@@ -84,6 +84,14 @@ void setup() {
   // define callbacks for i2c communication
   Wire.onReceive(receiveData);
   Wire.onRequest(sendData);
+  
+  // Start the NeoPixel
+  rearNeoStrip.begin();
+  rearNeoStrip.show();
+  
+  rearNeoStrip.setPixelColor(0, rearNeoStrip.Color(255, 0, 0)); 
+  rearNeoStrip.setPixelColor(7, rearNeoStrip.Color(255, 0, 0)); 
+  rearNeoStrip.show();
 }
 
 void loop() {
@@ -316,6 +324,65 @@ void Motors()
   digitalWrite(rmdirpin,rmspeed>0);                     // if right speed>0 then right motor direction is forward else reverse
   analogWrite (rmpwmpin,abs(rmspeed));                  // set right PWM to absolute value of right speed - if brake is engaged then PWM controls braking
   if(rmbrake>0 && rmspeed==0) rmenc=0;                  // if right brake is enabled and right speed=0 then reset right encoder counter
+  
+  
+  // Update the LEDS
+  //if(lmspeed>=0)
+  for(uint8_t i = 0; i < 1; i++)
+  {
+    uint8_t LED0 = 0, LED1 = 0, LED2 = 0, LED3 = 0;
+    uint8_t power = 0, dir = 0;
+    
+    if(i == 0) {
+      power = abs(lmspeed);
+      dir = lmspeed > 0;
+    }
+    else {
+      power = abs(rmspeed);
+      dir = rmspeed > 0;
+    }
+    
+    if(power == 0xFF) {
+      LED0 = 0xFF;
+      LED1 = 0xFF;
+      LED2 = 0xFF;
+      LED3 = 0xFF;
+    }
+    else if(power > 0xBF) {
+      LED0 = 0xFF;
+      LED1 = 0xFF;
+      LED2 = 0xFF;
+      LED3 = (power - 0xBF);
+    }
+    else if(power > 0x7F) {
+      LED0 = 0xFF;
+      LED1 = 0xFF;
+      LED2 = (power - 0x7F);
+    }
+    else if(power > 0x3F) {
+      LED0 = 0xFF;
+      LED1 = (power - 0x3F);
+    }
+    else {
+      LED0 = (power & 0x3F);
+    }
+    
+    if(lmspeed <= 0) {  
+      rearNeoStrip.setPixelColor(4, rearNeoStrip.Color(LED0, LED0, LED0)); 
+      rearNeoStrip.setPixelColor(5, rearNeoStrip.Color(LED1, LED1, LED1)); 
+      rearNeoStrip.setPixelColor(6, rearNeoStrip.Color(LED2, LED2, LED2)); 
+      rearNeoStrip.setPixelColor(7, rearNeoStrip.Color(LED3, LED3, LED3)); 
+    }
+    else {
+      rearNeoStrip.setPixelColor(4, rearNeoStrip.Color(LED0, 0, 0)); 
+      rearNeoStrip.setPixelColor(5, rearNeoStrip.Color(LED1, 0, 0)); 
+      rearNeoStrip.setPixelColor(6, rearNeoStrip.Color(LED2, 0, 0)); 
+      rearNeoStrip.setPixelColor(7, rearNeoStrip.Color(LED3, 0, 0));       
+    }
+    
+    rearNeoStrip.show();    
+  }
+  
   Serial.print("Motors :");
   Serial.print(lmspeed);
   Serial.print(":");
