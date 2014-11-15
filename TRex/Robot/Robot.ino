@@ -8,6 +8,8 @@ enum {
   I2C_CMD_SET_STATE = 0x10,
   I2C_CMD_STOP = 0x11,
   I2C_CMD_SET_MOTORS = 0x12,
+  I2C_CMD_AUTODRIVE_FORWARDS = 0x13,
+  I2C_CMD_AUTODRIVE_ROTATE = 0x14
   
 };
 
@@ -20,7 +22,10 @@ extern const byte supportedI2Ccmd[] = {
   I2C_CMD_GET_STATE,
   I2C_CMD_SET_STATE,
   I2C_CMD_STOP,
-  I2C_CMD_SET_MOTORS
+  I2C_CMD_SET_MOTORS,
+  I2C_CMD_AUTODRIVE_FORWARDS,
+  I2C_CMD_AUTODRIVE_ROTATE
+  
 };
 
 #define SLAVE_ADDRESS 0x07
@@ -104,8 +109,8 @@ void loop() {
 //    lmcur=(analogRead(lmcurpin)-511)*48.83;
 //    rmcur=(analogRead(rmcurpin)-511)*48.83;  
     xaxis=analogRead(axisxpin);                                 // read accelerometer - note analog read takes 260uS for each axis
-    yaxis=analogRead(axisxpin);
-    zaxis=analogRead(axisxpin);
+    yaxis=analogRead(axisypin);
+    zaxis=analogRead(axiszpin);
   
 
     i2cResponseLen = 0;
@@ -149,15 +154,9 @@ void loop() {
   else if(requestedCmd == I2C_CMD_STOP){    
     // Send back the command to confirm we recieved it
     i2cResponseLen = 0;
-    i2cResponse[i2cResponseLen++] = I2C_CMD_STOP;    
+    i2cResponse[i2cResponseLen++] = requestedCmd;    
 
-    // Set speed to zero and brakes to on
-    lmspeed = 0;
-    lmbrake=true;
-    rmspeed = 0;
-    rmbrake=true;
-    
-    Motors();
+    MotorsStop();
     
     requestedCmd = 0;
   
@@ -169,7 +168,7 @@ void loop() {
     
     // Send back the command to confirm we recieved it
     i2cResponseLen = 0;
-    i2cResponse[i2cResponseLen++] = I2C_CMD_SET_MOTORS;    
+    i2cResponse[i2cResponseLen++] = requestedCmd;    
 
     i=i2cArgs[0]*256+i2cArgs[1];                                               // read integer from I²C buffer
     if(i>-256 && i<256)
@@ -187,18 +186,54 @@ void loop() {
       gotRight = true;
     }
 
-    if(gotLeft && gotRight) {
+    if(gotLeft && gotRight) {      
+      // The use is now in control, so disable auto drive
+      stopAutoDrive();
+      
       Motors();
     }
     
     requestedCmd = 0;
   
   }
+  else if(requestedCmd == I2C_CMD_AUTODRIVE_FORWARDS && 2 == argsCnt) {
+    int distance;
+    
+    // Send back the command to confirm we recieved it
+    i2cResponseLen = 0;
+    i2cResponse[i2cResponseLen++] = requestedCmd;    
+    
+    // Read in the distance
+    distance = i2cArgs[0]*256+i2cArgs[1];
+    
+    // And lets start driving
+    driveForwards(distance);
+
+    requestedCmd = 0;    
+  }
+  else if(requestedCmd == I2C_CMD_AUTODRIVE_ROTATE && 2 == argsCnt) {
+    int rotate;
+    
+    // Send back the command to confirm we recieved it
+    i2cResponseLen = 0;
+    i2cResponse[i2cResponseLen++] = requestedCmd;    
+    
+    // Read in the distance
+    rotate = i2cArgs[0]*256+i2cArgs[1];
+    
+    // And lets start driving
+    driveRotate(rotate);
+
+    requestedCmd = 0;    
+  }  
   else if (requestedCmd != 0){
     // log the requested function is unsupported (e.g. by writing to serial port or soft serial
 
     requestedCmd = 0;   // set requestd cmd to 0 disabling processing in next loop
   }
+  
+  // Update any auto drive
+  performAutoDrive();
 }
 
 // callback for received data
@@ -260,11 +295,8 @@ void receiveData(int howMany){
     // Perform a stop
     Serial.print("invalid checksum:");
     Serial.println(CS);
-    lmspeed = 0;
-    lmbrake=true;
-    rmspeed = 0;
-    rmbrake=true;
-    Motors();    
+    MotorsStop();
+    
     return;
   }
   
@@ -307,14 +339,14 @@ void Motors()
     oldlmbrake = lmbrake;
   }
   digitalWrite(lmdirpin,lmspeed>0);                     // if left speed>0 then left motor direction is forward else reverse
-  analogWrite (lmpwmpin,abs(lmspeed));                  // set left PWM to absolute value of left speed - if brake is engaged then PWM controls braking
+  analogWrite (lmpwmpin,abs(lmspeed/2));                  // set left PWM to absolute value of left speed - if brake is engaged then PWM controls braking
   if(lmbrake>0 && lmspeed==0) lmenc=0;                  // if left brake is enabled and left speed=0 then reset left encoder counter
   
   if(oldrmbrake != rmbrake) {
     digitalWrite(rmbrkpin,rmbrake);                     // if right brake>0 then engage electronic braking for right motor#
   }
   digitalWrite(rmdirpin,rmspeed>0);                     // if right speed>0 then right motor direction is forward else reverse
-  analogWrite (rmpwmpin,abs(rmspeed));                  // set right PWM to absolute value of right speed - if brake is engaged then PWM controls braking
+  analogWrite (rmpwmpin,abs(rmspeed/2));                  // set right PWM to absolute value of right speed - if brake is engaged then PWM controls braking
   if(rmbrake>0 && rmspeed==0) rmenc=0;                  // if right brake is enabled and right speed=0 then reset right encoder counter
   
   
@@ -328,6 +360,17 @@ void Motors()
 }
 
 
+void MotorsStop() {
+  // Set speed to zero and brakes to on
+  lmspeed = 0;
+  lmbrake=true;
+  rmspeed = 0;
+  rmbrake=true;
+  
+  // Stopping the motors also cancels auto drive
+  stopAutoDrive();
+  Motors();
+}
 
 
 
