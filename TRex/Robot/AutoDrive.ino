@@ -46,9 +46,11 @@ void driveRotate(int degreesToTurn) {
   }
   
   targetDistance = int(abs(countsPerDegree) * degreesToTurn);
+  distanceTravelled = 0;
   oldlmEnc = lmenc;
   oldrmEnc = rmenc;
   autoDriveActive = true;
+  autoDriveLastChecked = millis();
   Motors();    
 }
 
