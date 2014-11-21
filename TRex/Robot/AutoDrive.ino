@@ -1,8 +1,11 @@
 // Code for controlling the robot
 int targetDistance = 0;
+int distanceTravelled = 0;
 boolean autoDriveActive = false;
 
 int oldlmEnc = 0, oldrmEnc = 0;
+int kp =5;
+unsigned long autoDriveLastChecked = 0;
 
 void stopAutoDrive() {
   autoDriveActive = false;
@@ -16,12 +19,14 @@ void driveForwards(int distance) {
   MotorsStop();
   
   targetDistance = distance;
+  distanceTravelled = 0;
   oldlmEnc = lmenc;
   oldrmEnc = rmenc;
   
   lmspeed = -150;
   rmspeed = -150;
   autoDriveActive = true;
+  autoDriveLastChecked = millis();
   Motors();
 }
 
@@ -49,12 +54,13 @@ void driveRotate(int degreesToTurn) {
 
 
 void performAutoDrive() {
+  
   if(false == autoDriveActive) {
     return;
   }
   
   
-  if(targetDistance <= lmenc || targetDistance <= rmenc) {
+  if(targetDistance <= distanceTravelled) {
     Serial.print("Auto drive complete> lmenc:");
     Serial.print(lmenc);
     Serial.print(" rmenc:");
@@ -63,7 +69,22 @@ void performAutoDrive() {
     // We've reach out destination
     MotorsStop();
   }
+  // Do we need to check the motors for drift?  
+  else if((millis() - autoDriveLastChecked) >= 100) {
+    int error = (lmenc - rmenc) / kp;
+  autoDriveLastChecked = millis();
     
+    rmspeed += error;
+    
+    Serial.print("Adjusting for drift ");
+    Serial.print((lmenc - rmenc));
+    Serial.print(" : ");
+    Serial.println(error);
+    distanceTravelled += lmenc;
+    lmenc = rmenc = 0;
+    
+  }
+  
   // Have we moved?  
   if(oldlmEnc == lmenc && oldrmEnc == rmenc) {
     // We've not moved... so increase power
@@ -74,7 +95,7 @@ void performAutoDrive() {
     
     Motors();*/
   }
-  else if((targetDistance - lmenc) <= 250) {
+  else if((targetDistance - distanceTravelled) <= 250) {
     // We are getting closer, so slow down
 //    lmspeed = -50;
 //    rmspeed = -50;
