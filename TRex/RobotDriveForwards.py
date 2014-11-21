@@ -214,7 +214,7 @@ try:
     outputStatus()
     
     while True:
-        time.sleep(0.25)
+        #time.sleep(0.25)
         events = pygame.event.get()
         for event in events:
           if event.type == pygame.JOYBUTTONDOWN:
@@ -222,6 +222,26 @@ try:
               autoDriveForwards(500)
             elif event.button == PS3_SQUARE:
               autoDriveRotate(90)
+            elif event.button == PS3_TRIANGLE:
+              autoDriveForwards(500)
+              time.sleep(5)
+              autoDriveRotate(90)
+              time.sleep(2)
+              autoDriveForwards(250)
+              time.sleep(5)
+              autoDriveRotate(180)
+              time.sleep(2)
+              autoDriveForwards(500)
+              time.sleep(5)
+              autoDriveRotate(180)
+              time.sleep(2)
+              autoDriveForwards(250)
+              time.sleep(2)
+              autoDriveRotate(90)
+              time.sleep(2)
+              autoDriveForwards(500)
+              time.sleep(5)
+              stop()
 
         # Read in current status
         # outputStatus()

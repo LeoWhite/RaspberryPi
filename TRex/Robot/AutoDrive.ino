@@ -19,28 +19,28 @@ void driveForwards(int distance) {
   oldlmEnc = lmenc;
   oldrmEnc = rmenc;
   
-  lmspeed = -100;
-  rmspeed = -100;
+  lmspeed = -150;
+  rmspeed = -150;
   autoDriveActive = true;
   Motors();
 }
 
 void driveRotate(int degreesToTurn) {
-  int countsPerDegree = 1;
+  float countsPerDegree = 0.9;
   
   // Call 'stop' to make sure we are stationary and to reset the encoders
   MotorsStop();
 
   if(degreesToTurn < 0) {
-    lmspeed = 100;
-    rmspeed = -100;
+    lmspeed = 150;
+    rmspeed = -150;
   }
   else {
-    lmspeed = -100;
-    rmspeed = 100;
+    lmspeed = -150;
+    rmspeed = 150;
   }
   
-  targetDistance = abs(countsPerDegree * degreesToTurn);
+  targetDistance = int(abs(countsPerDegree) * degreesToTurn);
   oldlmEnc = lmenc;
   oldrmEnc = rmenc;
   autoDriveActive = true;

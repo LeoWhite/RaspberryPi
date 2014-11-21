@@ -110,7 +110,7 @@ def setMotors(leftMotor, rightMotor):
     i2cFD.flush()
     
 def turnRight():
-  setMotors(100, -100)
+  setMotors(150, -150)
   time.sleep(0.1)
   stop()
   time.sleep(0.1)
@@ -188,14 +188,14 @@ try:
         currentDistance = getDistance()
         
         # If the distance is big enough, drive forwards
-        if currentDistance >= 50:
+        if currentDistance >= 75:
           # Move forwards
           if LeftTrack == 0 or RightTrack == 0:
             # Get over the inertia
-            setMotors(100, 100)
+            setMotors(-150, -150)
             time.sleep(0.05)
             
-          setMotors(50, 50)
+          setMotors(-50, -50)
         else:
           stop()
           
