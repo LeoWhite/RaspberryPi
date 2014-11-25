@@ -1,3 +1,6 @@
+#include <Adafruit_NeoPixel.h>
+
+
 // Light strip for the rear light
 Adafruit_NeoPixel rearNeoStrip = Adafruit_NeoPixel(8, RearLightPin, NEO_GRB + NEO_KHZ800);
 
