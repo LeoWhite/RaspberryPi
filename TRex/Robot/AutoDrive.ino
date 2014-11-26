@@ -40,6 +40,8 @@ void driveForwards(int distance) {
   right = -60;
   autoDriveActive = true;
   autoDriveLastChecked = millis();
+  lmbrake=false;
+  rmbrake=false;
   Motors(left, right);
 }
 
@@ -56,11 +58,11 @@ void driveRotate(int degreesToTurn) {
 
   if(degreesToTurn < 0) {
     left = 60;
-    rmspeed = -60;
+    right = -60;
   }
   else {
-    lmspeed = -60;
-    rmspeed = 60;
+    left = -60;
+    right = 60;
   }
   
   targetDistance = int(abs(countsPerDegree) * degreesToTurn);
@@ -69,6 +71,9 @@ void driveRotate(int degreesToTurn) {
   oldrmEnc = rmenc;
   autoDriveActive = true;
   autoDriveLastChecked = millis();
+  lmbrake=false;
+  rmbrake=false;
+  
   Motors(left, right);    
 }
 

@@ -68,14 +68,17 @@ void Motors(int left, int right)
   lmspeed = (lmspeed * powerRatio) / 100;
   rmspeed = (rmspeed * powerRatio) / 100;
   
+  Serial.print("lmbrake ");
+  Serial.println(lmbrake);
+  
   digitalWrite(lmbrkpin,lmbrake);                     // if left brake>0 then engage electronic braking for left motor
   digitalWrite(lmdirpin,left>0);                     // if left speed>0 then left motor direction is forward else reverse
-  analogWrite (lmpwmpin,abs(lmspeed/2));                  // set left PWM to absolute value of left speed - if brake is engaged then PWM controls braking
+  analogWrite (lmpwmpin,lmspeed);                  // set left PWM to absolute value of left speed - if brake is engaged then PWM controls braking
   if(lmbrake>0 && lmspeed==0) lmenc=0;                  // if left brake is enabled and left speed=0 then reset left encoder counter
   
   digitalWrite(rmbrkpin,rmbrake);                     // if right brake>0 then engage electronic braking for right motor#
   digitalWrite(rmdirpin,right>0);                     // if right speed>0 then right motor direction is forward else reverse
-  analogWrite (rmpwmpin,abs(rmspeed/2));                  // set right PWM to absolute value of right speed - if brake is engaged then PWM controls braking
+  analogWrite (rmpwmpin,rmspeed);                  // set right PWM to absolute value of right speed - if brake is engaged then PWM controls braking
   if(rmbrake>0 && rmspeed==0) rmenc=0;                  // if right brake is enabled and right speed=0 then reset right encoder counter
   
   
