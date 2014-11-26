@@ -1,10 +1,11 @@
 // Code for controlling the robot
 int targetDistance = 0;
 int distanceTravelled = 0;
+int powerLeft = 0, powerRight = 0;
 boolean autoDriveActive = false;
 
 int oldlmEnc = 0, oldrmEnc = 0;
-int kp =5;
+int kp = 2;
 unsigned long autoDriveLastChecked = 0;
 
 /**
@@ -18,12 +19,15 @@ void stopAutoDrive() {
  * Tell the robot to drive forwards a set distance.
  *
  * @param distance - Distance to drive in millimeters
+ * @param power - The power to run the motors at
  */
-void driveForwards(int distance) {
+void driveForwards(int distance, int power) {
   int left, right;
   
   Serial.print("Auto drive, distance is ");
-  Serial.println(distance);
+  Serial.print(distance);
+  Serial.print(" power is ");
+  Serial.println(power);
   
   // Call 'stop' to make sure we are stationary and to reset the encoders
   MotorsStop();
@@ -36,13 +40,13 @@ void driveForwards(int distance) {
   oldrmEnc = rmenc;
   
   // Start driving
-  left = -60;
-  right = -60;
   autoDriveActive = true;
   autoDriveLastChecked = millis();
   lmbrake=false;
   rmbrake=false;
-  Motors(left, right);
+  powerLeft = power;
+  powerRight = power;
+  Motors(powerLeft, powerRight);
 }
 
 /**
@@ -105,15 +109,16 @@ void performAutoDrive() {
     
     // Adjust the right motor speed to keep up with the
     // left motor
-    rmspeed += error;
+    powerRight += error;
     
     Serial.print("Adjusting for drift ");
     Serial.print((lmenc - rmenc));
     Serial.print(" : ");
-    Serial.println(error);
+    Serial.println(error);    
+
     distanceTravelled += lmenc;
     lmenc = rmenc = 0;
-    
+    Motors(powerLeft, powerRight);    
   }
   
   // Have we moved?  
@@ -141,14 +146,17 @@ void performAutoDrive() {
 }
 
 
-int autoDriveI2CForwards(byte *i2cArgs, uint8_t *pi2cResponse) {
-  int distance;
+int autoDriveI2C(byte *i2cArgs, uint8_t *pi2cResponse) {
+  int distance, power;
   
   // Read in the distance
   distance = i2cArgs[0]*256+i2cArgs[1];
   
+  // Read in the power
+  power = i2cArgs[2]*256+i2cArgs[3];
+
   // And lets start driving
-  driveForwards(distance);
+  driveForwards(distance, power);
 
   return 0;
 }

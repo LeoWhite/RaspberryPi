@@ -6,7 +6,7 @@ enum {
   I2C_CMD_GET_STATE = 0xF,
   I2C_CMD_STOP = 0x11,
   I2C_CMD_SET_MOTORS = 0x12,
-  I2C_CMD_AUTODRIVE_FORWARDS = 0x13,
+  I2C_CMD_AUTODRIVE = 0x13,
   I2C_CMD_AUTODRIVE_ROTATE = 0x14
   
 };
@@ -32,7 +32,7 @@ extern const i2cCommand supportedI2Ccmd[] = {
   { I2C_CMD_GET_STATE, 0, getStatus},
   { I2C_CMD_STOP, 0, motorsI2CStop},
   { I2C_CMD_SET_MOTORS, 4, motorsI2CSet},
-  { I2C_CMD_AUTODRIVE_FORWARDS, 2, autoDriveI2CForwards},
+  { I2C_CMD_AUTODRIVE, 4, autoDriveI2C},
   { I2C_CMD_AUTODRIVE_ROTATE, 2, autoDriveI2CRotate}
 };
 
