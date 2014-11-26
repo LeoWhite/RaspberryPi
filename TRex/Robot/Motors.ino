@@ -3,12 +3,17 @@
 // has been 
 #define OVERLOAD_COOLDOWN_MS 100
 
-#define POWER_RATIO 0x7F
+// What is the voltage we want to run the motors at
+#define MOTOR_TARGET_VOLTAGE 600
+
+int powerRatio = 0;
 
 /**
  * Configures the Arduino's pins that will be used to control the motors
  */
 void motorsSetup() {
+  int batteryVoltage;
+  
   // Setup the left motor
   pinMode(lmpwmpin,OUTPUT);
   pinMode(lmdirpin,OUTPUT);
@@ -18,6 +23,13 @@ void motorsSetup() {
   pinMode(rmpwmpin,OUTPUT);
   pinMode(rmdirpin,OUTPUT);
   pinMode(rmbrkpin,OUTPUT);
+  
+  // Work out how much power we should be applying to the
+  // motors to reach the target voltage
+  batteryVoltage = analogRead(voltspin)*10/3.357; 
+  
+  powerRatio = (int)(((float)MOTOR_TARGET_VOLTAGE / (float)batteryVoltage) * 100.0);
+
 }
 
 /** 
@@ -48,8 +60,13 @@ void Motors(int left, int right)
   }
 
   // Convert from percentage to actual value
-  lmspeed = (abs(left) * POWER_RATIO / 100);
-  rmspeed = (abs(right) * POWER_RATIO / 100);
+  lmspeed = (abs(left) * 0xFF) / 100;
+  rmspeed = (abs(right) * 0xFF) /100;
+  
+  // Convert to take into account the difference between
+  // the input voltage and the target output voltage
+  lmspeed = (lmspeed * powerRatio) / 100;
+  rmspeed = (rmspeed * powerRatio) / 100;
   
   digitalWrite(lmbrkpin,lmbrake);                     // if left brake>0 then engage electronic braking for left motor
   digitalWrite(lmdirpin,left>0);                     // if left speed>0 then left motor direction is forward else reverse
