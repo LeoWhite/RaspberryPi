@@ -7,10 +7,18 @@ int oldlmEnc = 0, oldrmEnc = 0;
 int kp =5;
 unsigned long autoDriveLastChecked = 0;
 
+/**
+ * Stops any current auto drive configuration
+ */
 void stopAutoDrive() {
   autoDriveActive = false;
 }
 
+/**
+ * Tell the robot to drive forwards a set distance.
+ *
+ * @param distance - Distance to drive in millimeters
+ */
 void driveForwards(int distance) {
   Serial.print("Auto drive, distance is ");
   Serial.println(distance);
@@ -18,11 +26,14 @@ void driveForwards(int distance) {
   // Call 'stop' to make sure we are stationary and to reset the encoders
   MotorsStop();
   
+  // Configure the target distance and reset
+  // the current count
   targetDistance = distance;
   distanceTravelled = 0;
   oldlmEnc = lmenc;
   oldrmEnc = rmenc;
   
+  // Start driving
   lmspeed = -150;
   rmspeed = -150;
   autoDriveActive = true;
@@ -30,7 +41,11 @@ void driveForwards(int distance) {
   Motors();
 }
 
+/**
+ * Tells the robot to rotate the specified number of degrees
+ */
 void driveRotate(int degreesToTurn) {
+  // The number of encoder tickes per degree
   float countsPerDegree = 0.9;
   
   // Call 'stop' to make sure we are stationary and to reset the encoders
@@ -54,14 +69,17 @@ void driveRotate(int degreesToTurn) {
   Motors();    
 }
 
-
+/**
+ * Called on each loop to check the status of any in progress
+ * auto drive.
+ */
 void performAutoDrive() {
-  
+  // Anything to do?
   if(false == autoDriveActive) {
     return;
   }
   
-  
+  // Have we reached (or passed) our destination
   if(targetDistance <= distanceTravelled) {
     Serial.print("Auto drive complete> lmenc:");
     Serial.print(lmenc);
@@ -72,10 +90,13 @@ void performAutoDrive() {
     MotorsStop();
   }
   // Do we need to check the motors for drift?  
+  // We don't want to be constantly checking and correcting
   else if((millis() - autoDriveLastChecked) >= 100) {
     int error = (lmenc - rmenc) / kp;
-  autoDriveLastChecked = millis();
+    autoDriveLastChecked = millis();
     
+    // Adjust the right motor speed to keep up with the
+    // left motor
     rmspeed += error;
     
     Serial.print("Adjusting for drift ");
@@ -110,4 +131,34 @@ void performAutoDrive() {
   oldlmEnc = lmenc;
   oldrmEnc = rmenc;  
 }
+
+
+int autoDriveI2CForwards(byte *i2cArgs, uint8_t *pi2cResponse) {
+  int i2cResponseLen = 0;
+  int distance;
+  
+  // Read in the distance
+  distance = i2cArgs[0]*256+i2cArgs[1];
+  
+  // And lets start driving
+  driveForwards(distance);
+
+  return i2cResponseLen;
+}
+
+
+int autoDriveI2CRotate(byte *i2cArgs, uint8_t *pi2cResponse) {
+  int i2cResponseLen = 0;
+  int rotate;
+  
+  // Read in the distance
+  rotate = i2cArgs[0]*256+i2cArgs[1];
+  
+  // And lets start driving
+  driveRotate(rotate);
+
+  return i2cResponseLen;
+}
+
+
 

@@ -5,21 +5,36 @@
 
 #include <PinChangeInt.h>
 
+/**
+ * Setup and configude the encoders ready for use
+ */
 void encodersSetup() {
-    // Configure motor encoders
+  // Configure motor encoder pins as inputs
   pinMode(lmencpin, INPUT)  ;
   digitalWrite(lmencpin, HIGH);
-  PCintPort::attachInterrupt(lmencpin, &leftEncoder, RISING);
-  pinMode(rmencpin, INPUT)  ;
+  pinMode(rmencpin, INPUT);
   digitalWrite(rmencpin, HIGH);
-  PCintPort::attachInterrupt(rmencpin, &rightEncoder, RISING);
 
+  // Set up an interrupt callback for the encoder pins so
+  // they update as soon as they change
+  PCintPort::attachInterrupt(lmencpin, &leftEncoder, RISING);
+  PCintPort::attachInterrupt(rmencpin, &rightEncoder, RISING);
 }
 
+/**
+ * Callback when the left encoder interrupt fires.
+ * This does the minimum work to ensure interrupts
+ * are not disabled for too long
+ */
 void leftEncoder() {
   lmenc++;
 }
 
+/**
+ * Callback when the right encoder interrupt fires.
+ * This does the minimum work to ensure interrupts
+ * are not disabled for too long
+ */
 void rightEncoder() {
   rmenc++;
 }

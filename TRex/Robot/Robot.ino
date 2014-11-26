@@ -17,6 +17,9 @@ int overloadtime = 100;
 
 volatile int  lmenc = 0,rmenc = 0;                                       // left and right encoder values
 
+/**
+ * Sets up the Arduino ready for use
+ */
 void setup() {
 //      TCCR2B = TCCR2B & B11111000 | B00000110; pwmfreq=6;    // set timer 2 divisor to  256 for PWM frequency of    122.070312500 Hz
 
@@ -35,6 +38,9 @@ void setup() {
   rearLightSetup();
 }
 
+/**
+ * main loop 
+ */
 void loop() {
   // Read in the current amps
   lmcur=(analogRead(lmcurpin)-511)*48.83;
@@ -48,9 +54,9 @@ void loop() {
     Motors();    
   }
   
+  // Check if there are any pendign i2c commands to process
   I2C_CheckCommands();
-  
-  
+    
   // Update any auto drive
   performAutoDrive();
 }

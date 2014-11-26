@@ -4,6 +4,11 @@
 // Light strip for the rear light
 Adafruit_NeoPixel rearNeoStrip = Adafruit_NeoPixel(8, RearLightPin, NEO_GRB + NEO_KHZ800);
 
+/**
+ * Configures the rear NeoPixel strip ready for use,
+ * setting up the brightness and turns on the end lights
+ * to indicate its loaded.
+ */
 void rearLightSetup() {
   rearNeoStrip.begin();
   rearNeoStrip.setBrightness(0x7f);
@@ -14,7 +19,10 @@ void rearLightSetup() {
   rearNeoStrip.show();
 }
 
-
+/**
+ * Updates the pattern of lights on the rear NeoPixel strip
+ * to reflect the current power usage of the motors
+ */
 void rearLightUpdate() {
   for(uint8_t i = 0; i < 2; i++)
   {
