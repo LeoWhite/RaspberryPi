@@ -88,7 +88,7 @@ void I2C_CheckCommands() {
 
     // Append the checksum to the end of the response arguments
     i2cResponse[i2cResponseLen++] = CS;  
-
+    
     // Clear pointer so we don't trigger it twice
     requestedCmd = NULL;    
   }

@@ -68,9 +68,6 @@ void Motors(int left, int right)
   lmspeed = (lmspeed * powerRatio) / 100;
   rmspeed = (rmspeed * powerRatio) / 100;
   
-  Serial.print("lmbrake ");
-  Serial.println(lmbrake);
-  
   digitalWrite(lmbrkpin,lmbrake);                     // if left brake>0 then engage electronic braking for left motor
   digitalWrite(lmdirpin,left>0);                     // if left speed>0 then left motor direction is forward else reverse
   analogWrite (lmpwmpin,lmspeed);                  // set left PWM to absolute value of left speed - if brake is engaged then PWM controls braking
@@ -123,7 +120,6 @@ int motorsI2CStop(byte *i2cArgs, uint8_t *pi2cResponse) {
 int motorsI2CSet(byte *i2cArgs, uint8_t *pi2cResponse) {
   int left, right;
   boolean gotLeft = false, gotRight = false;
-  int i2cResponseLen = 0;
 
   // read integer from I²C buffer
   left=i2cArgs[0]*256+i2cArgs[1];                                               
@@ -148,5 +144,5 @@ int motorsI2CSet(byte *i2cArgs, uint8_t *pi2cResponse) {
     Motors(left, right);
   }
     
-  return i2cResponseLen;
+  return 0;
 }

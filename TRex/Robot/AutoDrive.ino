@@ -142,7 +142,6 @@ void performAutoDrive() {
 
 
 int autoDriveI2CForwards(byte *i2cArgs, uint8_t *pi2cResponse) {
-  int i2cResponseLen = 0;
   int distance;
   
   // Read in the distance
@@ -151,12 +150,11 @@ int autoDriveI2CForwards(byte *i2cArgs, uint8_t *pi2cResponse) {
   // And lets start driving
   driveForwards(distance);
 
-  return i2cResponseLen;
+  return 0;
 }
 
 
 int autoDriveI2CRotate(byte *i2cArgs, uint8_t *pi2cResponse) {
-  int i2cResponseLen = 0;
   int rotate;
   
   // Read in the distance
@@ -165,7 +163,7 @@ int autoDriveI2CRotate(byte *i2cArgs, uint8_t *pi2cResponse) {
   // And lets start driving
   driveRotate(rotate);
 
-  return i2cResponseLen;
+  return 0;
 }
 
 
