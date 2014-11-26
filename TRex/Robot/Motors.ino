@@ -1,4 +1,9 @@
 
+// How long to disable the motors after an overload
+// has been 
+#define OVERLOAD_COOLDOWN_MS 100
+
+#define POWER_RATIO 0x7F
 
 /**
  * Configures the Arduino's pins that will be used to control the motors
@@ -16,27 +21,43 @@ void motorsSetup() {
 }
 
 /** 
- * Updates the motors based on the current settings
+ * Sets the speed of the motors.
+ * The motor power is convereted into a percentage so this
+ * routine takes in values from -100 to 100, with the sign of
+ * indicating the direction (i.e. negative numbers will
+ * make the motor go backwards)
+ *
+ * @param left - Speed of the left motor
+ * @param right - Speed of the right motor 
  */
-void Motors()
+void Motors(int left, int right)
 { 
   // Are we in an 'overload' state?
-  if((millis() - lastoverload) < overloadtime)
-  {
+  if((millis() - lastoverload) < OVERLOAD_COOLDOWN_MS) {
     // Set speed to zero and brakes to on
     lmspeed = 0;
     lmbrake=true;
     rmspeed = 0;
     rmbrake=true;
+  }  
+  
+  // Are the inputs valid
+  if(left > 100 || left < -100 || right > 100 || right < -100) {
+    Serial.println("Motor input invalid, ignoring");
+    return;
   }
+
+  // Convert from percentage to actual value
+  lmspeed = (abs(left) * POWER_RATIO / 100);
+  rmspeed = (abs(right) * POWER_RATIO / 100);
   
   digitalWrite(lmbrkpin,lmbrake);                     // if left brake>0 then engage electronic braking for left motor
-  digitalWrite(lmdirpin,lmspeed>0);                     // if left speed>0 then left motor direction is forward else reverse
+  digitalWrite(lmdirpin,left>0);                     // if left speed>0 then left motor direction is forward else reverse
   analogWrite (lmpwmpin,abs(lmspeed/2));                  // set left PWM to absolute value of left speed - if brake is engaged then PWM controls braking
   if(lmbrake>0 && lmspeed==0) lmenc=0;                  // if left brake is enabled and left speed=0 then reset left encoder counter
   
   digitalWrite(rmbrkpin,rmbrake);                     // if right brake>0 then engage electronic braking for right motor#
-  digitalWrite(rmdirpin,rmspeed>0);                     // if right speed>0 then right motor direction is forward else reverse
+  digitalWrite(rmdirpin,right>0);                     // if right speed>0 then right motor direction is forward else reverse
   analogWrite (rmpwmpin,abs(rmspeed/2));                  // set right PWM to absolute value of right speed - if brake is engaged then PWM controls braking
   if(rmbrake>0 && rmspeed==0) rmenc=0;                  // if right brake is enabled and right speed=0 then reset right encoder counter
   
@@ -54,15 +75,13 @@ void Motors()
  * Stops the motors and enables the brakes
  */
 void MotorsStop() {
-  // Set speed to zero and brakes to on
-  lmspeed = 0;
+  // Enable brakes
   lmbrake=true;
-  rmspeed = 0;
   rmbrake=true;
   
   // Stopping the motors also cancels auto drive
   stopAutoDrive();
-  Motors();
+  Motors(0, 0);
 }
 
 /**
@@ -82,24 +101,22 @@ int motorsI2CStop(byte *i2cArgs, uint8_t *pi2cResponse) {
  * of the left and right motors
  */
 int motorsI2CSet(byte *i2cArgs, uint8_t *pi2cResponse) {
-  int i;
+  int left, right;
   boolean gotLeft = false, gotRight = false;
   int i2cResponseLen = 0;
 
   // read integer from I²C buffer
-  i=i2cArgs[0]*256+i2cArgs[1];                                               
-  if(i>-256 && i<256)
-  {
-    lmspeed=i;                                                                 
+  left=i2cArgs[0]*256+i2cArgs[1];                                               
+  if(left >= -100 && left <= 100)
+  { 
     lmbrake=false;
     gotLeft = true;
   }
 
   // read integer from I²C buffer
-  i=i2cArgs[2]*256+i2cArgs[3];
-  if(i>-256 && i<256)
+  right=i2cArgs[2]*256+i2cArgs[3];
+  if(right >= -100 && right <= 100)
   {
-    rmspeed=i;
     rmbrake=false;
     gotRight = true;
   }
@@ -108,7 +125,7 @@ int motorsI2CSet(byte *i2cArgs, uint8_t *pi2cResponse) {
     // The user is now in control, so disable auto drive
     stopAutoDrive();
     
-    Motors();
+    Motors(left, right);
   }
     
   return i2cResponseLen;

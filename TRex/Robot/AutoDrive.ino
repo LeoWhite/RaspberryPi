@@ -20,6 +20,8 @@ void stopAutoDrive() {
  * @param distance - Distance to drive in millimeters
  */
 void driveForwards(int distance) {
+  int left, right;
+  
   Serial.print("Auto drive, distance is ");
   Serial.println(distance);
   
@@ -34,11 +36,11 @@ void driveForwards(int distance) {
   oldrmEnc = rmenc;
   
   // Start driving
-  lmspeed = -150;
-  rmspeed = -150;
+  left = -60;
+  right = -60;
   autoDriveActive = true;
   autoDriveLastChecked = millis();
-  Motors();
+  Motors(left, right);
 }
 
 /**
@@ -47,17 +49,18 @@ void driveForwards(int distance) {
 void driveRotate(int degreesToTurn) {
   // The number of encoder tickes per degree
   float countsPerDegree = 0.9;
+  int left, right;
   
   // Call 'stop' to make sure we are stationary and to reset the encoders
   MotorsStop();
 
   if(degreesToTurn < 0) {
-    lmspeed = 150;
-    rmspeed = -150;
+    left = 60;
+    rmspeed = -60;
   }
   else {
-    lmspeed = -150;
-    rmspeed = 150;
+    lmspeed = -60;
+    rmspeed = 60;
   }
   
   targetDistance = int(abs(countsPerDegree) * degreesToTurn);
@@ -66,7 +69,7 @@ void driveRotate(int degreesToTurn) {
   oldrmEnc = rmenc;
   autoDriveActive = true;
   autoDriveLastChecked = millis();
-  Motors();    
+  Motors(left, right);    
 }
 
 /**

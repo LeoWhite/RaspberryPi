@@ -51,7 +51,7 @@ void loop() {
     // Mark the fact that we have overloaded and trigger
     // an update of the Motors, this will cause them to stop
     lastoverload = millis();
-    Motors();    
+    Motors(0, 0);    
   }
   
   // Check if there are any pendign i2c commands to process
