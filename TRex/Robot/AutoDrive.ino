@@ -5,7 +5,7 @@ int powerLeft = 0, powerRight = 0;
 boolean autoDriveActive = false;
 
 int oldlmEnc = 0, oldrmEnc = 0;
-int kp = 2;
+int kp = 3;
 unsigned long autoDriveLastChecked = 0;
 
 /**
@@ -86,17 +86,21 @@ void driveRotate(int degreesToTurn) {
  * auto drive.
  */
 void performAutoDrive() {
+  // Cache and reset the encoder values immediately
+  // as they could change throughout this function.
+  int cachedLMEnc = lmenc, cachedRMEnc = rmenc;
+  
   // Anything to do?
   if(false == autoDriveActive) {
     return;
   }
   
   // Have we reached (or passed) our destination
-  if(targetDistance <= distanceTravelled) {
+  if(targetDistance <= (distanceTravelled + cachedLMEnc)) {
     Serial.print("Auto drive complete> lmenc:");
-    Serial.print(lmenc);
+    Serial.print(distanceTravelled + cachedLMEnc);
     Serial.print(" rmenc:");
-    Serial.println(rmenc);
+    Serial.println(cachedRMEnc);
     
     // We've reach out destination
     MotorsStop();
@@ -104,25 +108,27 @@ void performAutoDrive() {
   // Do we need to check the motors for drift?  
   // We don't want to be constantly checking and correcting
   else if((millis() - autoDriveLastChecked) >= 100) {
-    int error = (lmenc - rmenc) / kp;
+    int error = (cachedLMEnc - cachedRMEnc) / kp;
     autoDriveLastChecked = millis();
     
     // Adjust the right motor speed to keep up with the
     // left motor
     powerRight += error;
-    
+  
+    // Update the distance travelled and reset the encoder count
+    distanceTravelled += lmenc;
+    lmenc = rmenc = 0;
+
     Serial.print("Adjusting for drift ");
-    Serial.print((lmenc - rmenc));
+    Serial.print((cachedLMEnc - cachedRMEnc));
     Serial.print(" : ");
     Serial.println(error);    
 
-    distanceTravelled += lmenc;
-    lmenc = rmenc = 0;
     Motors(powerLeft, powerRight);    
   }
   
   // Have we moved?  
-  if(oldlmEnc == lmenc && oldrmEnc == rmenc) {
+  if(oldlmEnc == cachedLMEnc && oldrmEnc == cachedRMEnc) {
     // We've not moved... so increase power
 /*    lmspeed += 1;
     rmspeed += 1;
@@ -141,8 +147,8 @@ void performAutoDrive() {
   }
     
   // Cache the current encoders  
-  oldlmEnc = lmenc;
-  oldrmEnc = rmenc;  
+  oldlmEnc = cachedLMEnc;
+  oldrmEnc = cachedRMEnc;  
 }
 
 

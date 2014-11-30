@@ -4,6 +4,10 @@
 #define lmencpin     6  //  D6 - left  motor encoder input - optional
 #define rmencpin     5  //  D5 - right motor encoder input - optional
 
+#define lmenc_secondpin     13  //  D6 - left  motor encoder input - optional
+#define rmenc_secondpin     12  //  D5 - right motor encoder input - optional
+
+
 #define lmbrkpin     4  //  D4 - left  motor brake        control    pin    HIGH = Brake 
 #define lmdirpin     2  //  D2 - left  motor direction    control    pin    HIGH = Forward   Low = Reverse
 #define lmpwmpin     3  //  D3 - left  motor pulse width  modulation pin    0 - 255          Speed and Brake 
