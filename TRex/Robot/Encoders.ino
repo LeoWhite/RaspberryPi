@@ -2,7 +2,7 @@
 #define NO_PORTA_PINCHANGES // to indicate that port a will not be used for pin change interrupts
 //#define NO_PORTB_PINCHANGES // to indicate that port b will not be used for pin change interrupts
 #define NO_PORTC_PINCHANGES // to indicate that port c will not be used for pin change interrupts
-
+#define NO_PORTD_PINCHANGES
 
 #include <PinChangeInt.h>
 

@@ -59,6 +59,24 @@ void Motors(int left, int right)
     return;
   }
 
+  // Check for stopping
+/*  if(lmspeed == 0) {
+    lmbrake = true;
+    lmspeed = 100;
+  }
+  else {
+    lmbrake = false;
+  }
+  
+  if(rmspeed == 0) {
+    rmbrake = true;
+    rmspeed = 100;
+  }
+  else {
+    rmbrake = false;
+  }
+  */
+  
   // Convert from percentage to actual value
   lmspeed = (abs(left) * 0xFF) / 100;
   rmspeed = (abs(right) * 0xFF) /100;
@@ -82,10 +100,14 @@ void Motors(int left, int right)
   // Update the LEDS
   rearLightUpdate();
   
-  Serial.print("Motors :");
+  Serial.print("Motors =");
   Serial.print(lmspeed);
+  Serial.print("-");
+  Serial.print(lmbrake);
   Serial.print(":");
-  Serial.println(rmspeed);
+  Serial.print(rmspeed);
+  Serial.print("-");
+  Serial.println(rmbrake);
 }
 
 /**

@@ -31,6 +31,7 @@ void driveForwards(int distance, int power) {
   
   // Call 'stop' to make sure we are stationary and to reset the encoders
   MotorsStop();
+  lmenc = rmenc = 0;
   
   // Configure the target distance and reset
   // the current count
@@ -97,24 +98,28 @@ void performAutoDrive() {
   
   // Have we reached (or passed) our destination
   if(targetDistance <= (distanceTravelled + cachedLMEnc)) {
-    Serial.print("Auto drive complete> lmenc:");
-    Serial.print(distanceTravelled + cachedLMEnc);
-    Serial.print(" rmenc:");
-    Serial.println(cachedRMEnc);
+    Serial.print("Auto drive complete> distance travelled:");
+    Serial.println(distanceTravelled + cachedLMEnc);
     
     // We've reach out destination
     MotorsStop();
   }
   // Do we need to check the motors for drift?  
   // We don't want to be constantly checking and correcting
-  else if((millis() - autoDriveLastChecked) >= 100) {
-    int error = (cachedLMEnc - cachedRMEnc) / kp;
+  else if((millis() - autoDriveLastChecked) >= 50) {
+    int error = (cachedLMEnc - cachedRMEnc) * kp;
     autoDriveLastChecked = millis();
     
     // Adjust the right motor speed to keep up with the
     // left motor
     powerRight += error;
-  
+if(powerRight > 100) {
+  powerRight = 100;
+}
+else if(powerRight < 0) {
+  powerRight = 0;
+}
+
     // Update the distance travelled and reset the encoder count
     distanceTravelled += lmenc;
     lmenc = rmenc = 0;
