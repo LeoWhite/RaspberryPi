@@ -45,6 +45,7 @@ def readMessage(length):
         print "Checksum mismatch!"
         
     return 0
+
         
 # output the current status of the robot
 def outputStatus():
@@ -78,7 +79,7 @@ def stop():
   # Stop the motors
   try:
     sendMessage("\x11", "")
-    time.sleep(0.0001)
+    time.sleep(0.001)
     result = readMessage(1);
     if ord(result[0:1]) != 0x11:
       print "Failed to stop!"
@@ -93,7 +94,7 @@ def setMotors(leftMotor, rightMotor):
   
   try:
     sendMessage("\x12", struct.pack("!hh", leftMotor, rightMotor))
-    time.sleep(0.0001)
+    time.sleep(0.001)
     result = readMessage(1);
     if ord(result[0:1]) != 0x12:
       print "Failed to set motors!"
@@ -153,12 +154,12 @@ try:
           
           if event.type == pygame.JOYAXISMOTION:
             if event.axis == 1:
-              NewLeftTrack = math.ceil(event.value * 0xFF)
+              NewLeftTrack = -(math.ceil(event.value * 100))
               if NewLeftTrack != LeftTrack:
                 LeftTrack = NewLeftTrack
                 UpdateMotors = 1
             elif event.axis == 3:
-              NewRightTrack = math.ceil(event.value * 0xFF)
+              NewRightTrack = -(math.ceil(event.value * 100))
               if NewRightTrack != RightTrack:
                 RightTrack = NewRightTrack
                 UpdateMotors = 1
