@@ -36,6 +36,9 @@ void setup() {
   // initialize i2c
   I2CSetup();
   
+  // Initialise the Servos
+  servoSetup();
+  
   // Start the NeoPixel
   rearLightSetup();
   

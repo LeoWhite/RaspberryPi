@@ -39,4 +39,6 @@
 
 #define RearLightPin 7 // Read NeoPixel light
 
+#define ServoMax 1
+#define ServoOnePin 8 // Front mounted Servo
 
