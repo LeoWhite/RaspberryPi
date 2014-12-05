@@ -3,8 +3,8 @@
 int servoPos = 0;
 Servo servoOne;
 
-#define SERVO_MIN_POSITION 1000
-#define SERVO_MAX_POSITION 2000
+#define SERVO_MIN_POSITION 800
+#define SERVO_MAX_POSITION 2500
 #define SERVO_MID_POSITION (((SERVO_MAX_POSITION - SERVO_MIN_POSITION) / 2) + SERVO_MIN_POSITION)
 
 
@@ -13,7 +13,7 @@ void servoSetup() {
   servoOne.attach(ServoOnePin);
   
   // Set to its default position
-  servoOne.writeMicroseconds(SERVO_MIN_POSITION);
+  servoOne.writeMicroseconds(SERVO_MAX_POSITION);
   
 }
 
@@ -41,7 +41,7 @@ int servoI2CSet(byte *i2cArgs, uint8_t *pi2cResponse) {
 
   // read integer from I²C buffer
   servoPosition=i2cArgs[0]*256+i2cArgs[1];                                               
-  if(servoPosition >= 1000 && servoPosition <= 2000)
+  if(servoPosition >= SERVO_MIN_POSITION && servoPosition <= SERVO_MAX_POSITION)
   { 
     gotPosition=true;
   }
