@@ -1,5 +1,5 @@
 #include "IOpins.h"
-
+#include <avr/wdt.h>
 
 
 
@@ -21,8 +21,10 @@ volatile int  lmenc = 0,rmenc = 0;                                       // left
  * Sets up the Arduino ready for use
  */
 void setup() {
-//      TCCR2B = TCCR2B & B11111000 | B00000110; pwmfreq=6;    // set timer 2 divisor to  256 for PWM frequency of    122.070312500 Hz
-
+  // Reset the watchdog in case it triggered
+  MCUSR=0;
+  wdt_disable();
+  
   Serial.begin(115200);         // start serial for output
 
   // Configure motor
@@ -36,6 +38,11 @@ void setup() {
   
   // Start the NeoPixel
   rearLightSetup();
+  
+  // With setup complete we now enable the watchdog
+  wdt_enable(WDTO_500MS);
+  
+  Serial.println("Setup complete");
 }
 
 /**
@@ -59,6 +66,9 @@ void loop() {
     
   // Update any auto drive
   performAutoDrive();
+  
+  // Reset the watchdog to stop it triggering
+  wdt_reset();
 }
 
 

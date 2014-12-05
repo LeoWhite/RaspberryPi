@@ -13,6 +13,8 @@ int powerRatio = 0;
  */
 void motorsSetup() {
   int batteryVoltage;
+
+  TCCR2B = TCCR2B & B11111000 | B00000110;   // set timer 2 divisor to  256 for PWM frequency of    122.070312500 Hz
   
   // Setup the left motor
   pinMode(lmpwmpin,OUTPUT);
@@ -30,6 +32,8 @@ void motorsSetup() {
   
   powerRatio = (int)(((float)MOTOR_TARGET_VOLTAGE / (float)batteryVoltage) * 100.0);
 
+  // Ensure the motors are not running
+  MotorsStop();
 }
 
 /** 
@@ -100,14 +104,14 @@ void Motors(int left, int right)
   // Update the LEDS
   rearLightUpdate();
   
-  Serial.print("Motors =");
+/*  Serial.print("Motors =");
   Serial.print(lmspeed);
   Serial.print("-");
   Serial.print(lmbrake);
   Serial.print(":");
   Serial.print(rmspeed);
   Serial.print("-");
-  Serial.println(rmbrake);
+  Serial.println(rmbrake);*/
 }
 
 /**
