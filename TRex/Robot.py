@@ -52,8 +52,11 @@ pygame.init()
 
 # Define the status structure
 StatusStruct = namedtuple("StatusStruct", "start errorFlag batteryVoltage leftMotorCurrent leftMotorEncoder rightMotorCurrent rightMotorEncoder xAxis yAxis zAxis deltaX deltaY deltaZ")
-SetMotorStruct = namedtuple("SetMotorStruct", "command leftMotor rightMotor")
 
+# sends the i2c command to the Arduino, automatically adding a checksum
+#
+# cmd - the byte command to send
+# message - any extra arguments to send
 def sendMessage(cmd, message):
   newMessage =  cmd + message
   
@@ -63,9 +66,14 @@ def sendMessage(cmd, message):
     CS = (CS & 0xFF ^ ord(newMessage[i:i+1]) & 0xFF)
     
   finalMessage = newMessage + chr(CS)
-    
+  
+  # Send the message  
   os.write(i2cConnect, finalMessage)
   
+# reads a message back from the Arduino, vaidating
+# the checksum
+#
+# length - The expected length of the message  
 def readMessage(length):
     # Read in data plus checksum
     status = i2cFD.read(length + 1)
@@ -88,33 +96,30 @@ def readMessage(length):
 def outputStatus():
   global i2cConnect, i2cFD
   
+  # We use a try/catch block in case there is an error reading or writing
+  # to the i2c file handle
   try:
     sendMessage("\x0F", "")
 
-    #os.write(i2cConnect, "\x0F")
-    # Reading in the acceleromotor readings takes time
+    # Wait for the response to be generated, then read it in
     time.sleep(0.001)
     status = readMessage(24)
   
+    # Unpack the message and print it
     currentStatus = StatusStruct._make(struct.unpack('!bbHhhhhhhhhhh', status))
     print currentStatus
   except:
     print "Failed to read status"
     i2cFD.flush()
   
-# Wait for a joystick
-while pygame.joystick.get_count() == 0:
-  print 'waiting for joystick count = %i' % pygame.joystick.get_count()
-  pygame.joystick.quit()
-  time.sleep(1)
-  pygame.joystick.init()
-
-# Stop the robot
+# Stops the robot
 def stop():
   global i2cConnect, i2cFD
 
-  # Stop the motors
+  # We use a try/catch block in case there is an error reading or writing
+  # to the i2c file handle
   try:
+    # Send the 'stop' request
     sendMessage("\x11", "")
     time.sleep(0.001)
     result = readMessage(1);
@@ -125,11 +130,18 @@ def stop():
     i2cFD.flush()
 
     
-# Set the motors
+# Set the motor power to the specifiedvalues
+#
+# leftMotor - Power for left motor. -100 to 100
+# rightMotor - Power for right motor. -100 to 100
 def setMotors(leftMotor, rightMotor):
   global i2cConnect, i2cFD
   
+  # We use a try/catch block in case there is an error reading or writing
+  # to the i2c file handle
   try:
+    # We are sending two arguments, so we use the struct.pack code
+    # to convert them into a byte stream
     sendMessage("\x12", struct.pack("!hh", leftMotor, rightMotor))
     time.sleep(0.001)
     result = readMessage(1);
@@ -140,11 +152,16 @@ def setMotors(leftMotor, rightMotor):
     i2cFD.flush()
     
 
-# Set the servo position
+# Set the position of the front mounted servo
+#
+# servoPosition - The ms value to set the servo position to.
 def setServo(servoPosition):
   global i2cConnect, i2cFD
   
+  # We use a try/catch block in case there is an error reading or writing
+  # to the i2c file handle
   try:
+    # Need to send one argument with the message
     sendMessage("\x15", struct.pack("!h", servoPosition))
     time.sleep(0.001)
     result = readMessage(1);
@@ -154,6 +171,14 @@ def setServo(servoPosition):
     print "Failed to set servo!"
     i2cFD.flush()
 
+# Wait for a joystick to become available before running the
+# rest of the script
+while pygame.joystick.get_count() == 0:
+  print 'waiting for joystick count = %i' % pygame.joystick.get_count()
+  pygame.joystick.quit()
+  time.sleep(1)
+  pygame.joystick.init()
+
 
 # Get a handle on the joystick
 j = pygame.joystick.Joystick(0)
@@ -161,11 +186,9 @@ j.init()
 
 print 'Initialized Joystick : %s' % j.get_name()
 
-
-threshold = 0.60
 LeftTrack = 0
 RightTrack = 0
-ServoPosition = 1000
+ServoPosition = 2500
 
 # Configure wiring pi  
 wiringpi.wiringPiSetupPhys()
@@ -174,18 +197,6 @@ wiringpi.wiringPiSetupPhys()
 i2cConnect = wiringpi.wiringPiI2CSetup(I2CAddress)
 i2cFD = os.fdopen(i2cConnect, "rw", 0)
 
-
-def setcommand(axis_val):
-    if axis_val > threshold:
-        return 1
-    elif axis_val < -threshold:
-        return 2
-    elif abs(axis_val) < threshold:
-        return 0
- 
-def setmotors():
-  setMotors(LeftTrack, RightTrack)  
- 
 try:
     # Only allow axis and button events
     pygame.event.set_allowed([pygame.JOYAXISMOTION, pygame.JOYBUTTONDOWN])
@@ -200,7 +211,6 @@ try:
     outputStatus()
     
     while True:
-        time.sleep(0.1)
         events = pygame.event.get()
         for event in events:
           UpdateMotors = 0
@@ -208,6 +218,8 @@ try:
           NewLeftTrack = 0;
           NewRightTrack = 0;
           
+          # Check if the analogue sticks have changed position
+          # and update the motors accordingly
           if event.type == pygame.JOYAXISMOTION:
             if event.axis == PS3_AXIS_LEFT_V:
               NewLeftTrack = -(math.ceil(event.value * 60))
@@ -235,7 +247,7 @@ try:
           if UpdateMotors:
             #print 'LeftTrack %f' % LeftTrack
             #print 'RightTrack %f' % RightTrack              
-            setmotors()
+            setMotors(LeftTrack, RightTrack)  
               
           if UpdateServo:
             setServo(ServoPosition)
