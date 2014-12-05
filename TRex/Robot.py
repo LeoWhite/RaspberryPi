@@ -7,6 +7,43 @@ import os, sys, math
 from collections import namedtuple
 import struct
 
+# Key mappings
+PS3_SELECT = 0
+PS3_L3 = 1
+PS3_R3 = 2
+PS3_START = 3
+PS3_DPAD_UP = 4
+PS3_DPAD_RIGHT = 5
+PS3_DPAD_DOWN = 6
+PS3_DPAD_LEFT = 7
+PS3_L2 = 8
+PS3_R2 = 9
+PS3_L1 = 10
+PS3_R1 = 11
+PS3_TRIANGLE = 12
+PS3_CIRCLE = 13
+PS3_CROSS =  14
+PS3_SQUARE = 15
+PS3_PLAYSTATION = 16
+
+PS3_AXIS_LEFT_H = 0
+PS3_AXIS_LEFT_V = 1
+PS3_AXIS_RIGHT_H = 2
+PS3_AXIS_RIGHT_V = 3
+PS3_AXIS_DPAD_UP = 8
+PS3_AXIS_DPAD_RIGHT = 9
+PS3_AXIS_DPAD_DOWN = 10
+PS3_AXIS_DPAD_LEFT = 11 
+PS3_AXIS_L2 = 12
+PS3_AXIS_R2 = 3
+PS3_AXIS_L1 = 14
+PS3_AXIS_R1 = 15
+PS3_AXIS_TRIANGLE = 16
+PS3_AXIS_CIRCLE = 17
+PS3_AXIS_CROSS =  18
+PS3_AXIS_SQUARE = 19
+PS3_AXIS_PLAYSTATION = 16
+
 # The I2C address of the arduino
 I2CAddress = 0x07
 
@@ -103,6 +140,20 @@ def setMotors(leftMotor, rightMotor):
     i2cFD.flush()
     
 
+# Set the servo position
+def setServo(servoPosition):
+  global i2cConnect, i2cFD
+  
+  try:
+    sendMessage("\x15", struct.pack("!h", servoPosition))
+    time.sleep(0.001)
+    result = readMessage(1);
+    if ord(result[0:1]) != 0x15:
+      print "Failed to set servo!"
+  except:
+    print "Failed to set servo!"
+    i2cFD.flush()
+
 
 # Get a handle on the joystick
 j = pygame.joystick.Joystick(0)
@@ -114,6 +165,7 @@ print 'Initialized Joystick : %s' % j.get_name()
 threshold = 0.60
 LeftTrack = 0
 RightTrack = 0
+ServoPosition = 1000
 
 # Configure wiring pi  
 wiringpi.wiringPiSetupPhys()
@@ -140,6 +192,9 @@ try:
 
     # Make sure the motors are stopped
     stop()
+
+    # Set the default servo position
+    setServo(ServoPosition);
     
     # Read in current status
     outputStatus()
@@ -149,26 +204,41 @@ try:
         events = pygame.event.get()
         for event in events:
           UpdateMotors = 0
+          UpdateServo = 0
           NewLeftTrack = 0;
           NewRightTrack = 0;
           
           if event.type == pygame.JOYAXISMOTION:
-            if event.axis == 1:
+            if event.axis == PS3_AXIS_LEFT_V:
               NewLeftTrack = -(math.ceil(event.value * 100))
               if NewLeftTrack != LeftTrack:
                 LeftTrack = NewLeftTrack
                 UpdateMotors = 1
-            elif event.axis == 3:
+            elif event.axis == PS3_AXIS_RIGHT_V:
               NewRightTrack = -(math.ceil(event.value * 100))
               if NewRightTrack != RightTrack:
                 RightTrack = NewRightTrack
                 UpdateMotors = 1
-    
-            if UpdateMotors:
-              #print 'LeftTrack %f' % LeftTrack
-              #print 'RightTrack %f' % RightTrack
-                          
-              setmotors()
+
+          if event.type == pygame.JOYBUTTONDOWN:
+            # Moving the servo down
+            if event.button == PS3_R2:
+              if ServoPosition < 2000:
+                ServoPosition += 100;
+                UpdateServo = 1
+            # Moving the servo up
+            elif event.button == PS3_R1:
+              if ServoPosition > 1000:
+                ServoPosition -= 100;
+                UpdateServo = 1
+
+          if UpdateMotors:
+            #print 'LeftTrack %f' % LeftTrack
+            #print 'RightTrack %f' % RightTrack              
+            setmotors()
+              
+          if UpdateServo:
+            setServo(ServoPosition)
             
         
         
