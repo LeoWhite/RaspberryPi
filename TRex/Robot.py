@@ -188,6 +188,7 @@ print 'Initialized Joystick : %s' % j.get_name()
 
 LeftTrack = 0
 RightTrack = 0
+PowerLimiter = 60
 ServoPosition = 2500
 
 # Configure wiring pi  
@@ -222,12 +223,12 @@ try:
           # and update the motors accordingly
           if event.type == pygame.JOYAXISMOTION:
             if event.axis == PS3_AXIS_LEFT_V:
-              NewLeftTrack = -(math.ceil(event.value * 60))
+              NewLeftTrack = -(math.ceil(event.value * PowerLimiter))
               if NewLeftTrack != LeftTrack:
                 LeftTrack = NewLeftTrack
                 UpdateMotors = 1
             elif event.axis == PS3_AXIS_RIGHT_V:
-              NewRightTrack = -(math.ceil(event.value * 60))
+              NewRightTrack = -(math.ceil(event.value * PowerLimiter))
               if NewRightTrack != RightTrack:
                 RightTrack = NewRightTrack
                 UpdateMotors = 1
@@ -243,7 +244,23 @@ try:
               if ServoPosition > 800:
                 ServoPosition -= 100;
                 UpdateServo = 1
-
+            # Change the power limit to its default
+            elif event.button == PS3_DPAD_LEFT:
+              PowerLimiter = 60;
+            # Change the power limit to its max
+            elif event.button == PS3_DPAD_RIGHT:
+              PowerLimiter = 100;
+            # Increase the power limit
+            elif event.button == PS3_DPAD_UP:
+              PowerLimiter += 10;
+              if PowerLimiter > 100:
+                PowerLimiter = 100;
+            # Increase the power limit
+            elif event.button == PS3_DPAD_DOWN:
+              PowerLimiter -= 10;
+              if PowerLimiter < 60:
+                PowerLimiter = 60;
+                
           if UpdateMotors:
             #print 'LeftTrack %f' % LeftTrack
             #print 'RightTrack %f' % RightTrack              
