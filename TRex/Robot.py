@@ -210,25 +210,25 @@ try:
           
           if event.type == pygame.JOYAXISMOTION:
             if event.axis == PS3_AXIS_LEFT_V:
-              NewLeftTrack = -(math.ceil(event.value * 100))
+              NewLeftTrack = -(math.ceil(event.value * 60))
               if NewLeftTrack != LeftTrack:
                 LeftTrack = NewLeftTrack
                 UpdateMotors = 1
             elif event.axis == PS3_AXIS_RIGHT_V:
-              NewRightTrack = -(math.ceil(event.value * 100))
+              NewRightTrack = -(math.ceil(event.value * 60))
               if NewRightTrack != RightTrack:
                 RightTrack = NewRightTrack
                 UpdateMotors = 1
 
           if event.type == pygame.JOYBUTTONDOWN:
             # Moving the servo down
-            if event.button == PS3_R2:
-              if ServoPosition < 2000:
+            if event.button == PS3_R1:
+              if ServoPosition < 2500:
                 ServoPosition += 100;
                 UpdateServo = 1
             # Moving the servo up
-            elif event.button == PS3_R1:
-              if ServoPosition > 1000:
+            elif event.button == PS3_R2:
+              if ServoPosition > 800:
                 ServoPosition -= 100;
                 UpdateServo = 1
 
