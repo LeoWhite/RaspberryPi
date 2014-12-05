@@ -7,6 +7,7 @@ import os, sys, math
 from collections import namedtuple
 import struct
 
+
 # The I2C address of the arduino
 I2CAddress = 0x07
 
@@ -43,9 +44,9 @@ def readMessage(length):
         return status[:length]
       else:
         print "Checksum mismatch!"
+        print CS
         
     return 0
-
         
 # output the current status of the robot
 def outputStatus():
@@ -56,7 +57,7 @@ def outputStatus():
 
     #os.write(i2cConnect, "\x0F")
     # Reading in the acceleromotor readings takes time
-    time.sleep(0.001)
+    time.sleep(0.1)
     status = readMessage(24)
   
     currentStatus = StatusStruct._make(struct.unpack('!bbHhhhhhhhhhh', status))
@@ -65,13 +66,6 @@ def outputStatus():
     print "Failed to read status"
     i2cFD.flush()
   
-# Wait for a joystick
-while pygame.joystick.get_count() == 0:
-  print 'waiting for joystick count = %i' % pygame.joystick.get_count()
-  pygame.joystick.quit()
-  time.sleep(1)
-  pygame.joystick.init()
-
 # Stop the robot
 def stop():
   global i2cConnect, i2cFD
@@ -79,7 +73,7 @@ def stop():
   # Stop the motors
   try:
     sendMessage("\x11", "")
-    time.sleep(0.001)
+    time.sleep(0.01)
     result = readMessage(1);
     if ord(result[0:1]) != 0x11:
       print "Failed to stop!"
@@ -103,12 +97,39 @@ def setMotors(leftMotor, rightMotor):
     i2cFD.flush()
     
 
+# Auto drive
+def autoDriveForwards(distance):
+  global i2cConnect, i2cFD
+  
+  print "Driving forwards"
+  
+  try:
+    sendMessage("\x13", struct.pack("!h", distance))
+    time.sleep(0.001)
+    result = readMessage(1);
+    if ord(result[0:1]) != 0x13:
+      print "Failed to set autodrive!"
+  except:
+    print "Failed to set autodrive!"
+    i2cFD.flush()
 
-# Get a handle on the joystick
-j = pygame.joystick.Joystick(0)
-j.init()
+# Auto drive
+def autoDriveRotate(angle):
+  global i2cConnect, i2cFD
+  
+  print "Rotating"
 
-print 'Initialized Joystick : %s' % j.get_name()
+  try:
+    sendMessage("\x14", struct.pack("!h", angle))
+    time.sleep(0.001)
+    result = readMessage(1);
+    if ord(result[0:1]) != 0x14:
+      print "Failed to set autodrive!"
+  except:
+    print "Failed to set autodrive!"
+    i2cFD.flush()
+    # Get a handle on the joystick
+
 
 
 threshold = 0.60
@@ -144,35 +165,7 @@ try:
     # Read in current status
     outputStatus()
     
-    while True:
-        time.sleep(0.1)
-        events = pygame.event.get()
-        for event in events:
-          UpdateMotors = 0
-          NewLeftTrack = 0;
-          NewRightTrack = 0;
-          
-          if event.type == pygame.JOYAXISMOTION:
-            if event.axis == 1:
-              NewLeftTrack = -(math.ceil(event.value * 100))
-              if NewLeftTrack != LeftTrack:
-                LeftTrack = NewLeftTrack
-                UpdateMotors = 1
-            elif event.axis == 3:
-              NewRightTrack = -(math.ceil(event.value * 100))
-              if NewRightTrack != RightTrack:
-                RightTrack = NewRightTrack
-                UpdateMotors = 1
-    
-            if UpdateMotors:
-              #print 'LeftTrack %f' % LeftTrack
-              #print 'RightTrack %f' % RightTrack
-                          
-              setmotors()
-            
-        
         
 except KeyboardInterrupt:
     # Turn off the motors
     stop()
-    j.quit()

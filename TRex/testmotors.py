@@ -17,7 +17,8 @@ def outputStatus():
   global i2cConnect, i2cFD
   
   os.write(i2cConnect, "\x0F")
-  time.sleep(0.15)
+  # Reading in the acceleromotor readings takes time
+  time.sleep(0.001)
   status = i2cFD.read(24)
   
   currentStatus = StatusStruct._make(struct.unpack('!bbHhhhhhhhhhh', status))
@@ -29,7 +30,7 @@ def stop():
 
   # Stop the motors
   os.write(i2cConnect, "\x11")
-  time.sleep(0.1)
+  time.sleep(0.0001)
   result = wiringpi.wiringPiI2CRead(i2cConnect)
 
   if result != 0x11:
@@ -40,7 +41,7 @@ def setMotors(leftMotor, rightMotor):
   global i2cConnect, i2cFD
   
   os.write(i2cConnect, struct.pack("!bhh", 0x12, leftMotor, rightMotor))
-  time.sleep(0.1)
+  time.sleep(0.0001)
   result = wiringpi.wiringPiI2CRead(i2cConnect)
 
   if result != 0x12:
