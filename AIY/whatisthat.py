@@ -5,6 +5,7 @@ import os
 import time
 import signal
 import subprocess
+import sys
 
 # Imports the Google Cloud client library
 from google.cloud import vision
@@ -69,9 +70,20 @@ def detectLogo (imageToProcess):
     print("That is the {} logo.".format(logos[0].description))
   else:
      print("Sorry, I don't know what logo that is.")
-     
+
+# Creat a client to perform the processing
 client = createClient()
 
+# Request a new image to be processed
 newImage = getImage()
 
-detectLabels(newImage)
+# What form of processing do we want?
+if (len(sys.argv) < 2):
+  # Default to labels
+  detectLabels(newImage)
+elif ("logo" == sys.argv[1]):
+  # Check for logos
+  detectLogo(newImage)
+else:
+  # Default to labels
+  detectLabels(newImage)
