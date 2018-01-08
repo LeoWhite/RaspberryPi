@@ -62,14 +62,24 @@ def detectLabels(imageToProcess):
       
       
 def detectLogo (imageToProcess):
-  # Performs label detection on the image file
-  response = client.label_detection(image=imageToProcess)  
+  # Performs logo detection on the image file
+  response = client.logo_detection(image=imageToProcess)
   logos = response.logo_annotations
 
   if len(logos) > 0:
     print("That is the {} logo.".format(logos[0].description))
   else:
      print("Sorry, I don't know what logo that is.")
+
+def detectText (imageToProcess):
+  # Performs text detection on the image file
+  response = client.text_detection(image=imageToProcess)
+  texts = response.text_annotations
+
+  if len(texts) > 0:
+    print("That says {}".format(texts[0].description))
+  else:
+     print("Sorry, I couldn't read that.")
 
 # Creat a client to perform the processing
 client = createClient()
@@ -84,6 +94,9 @@ if (len(sys.argv) < 2):
 elif ("logo" == sys.argv[1]):
   # Check for logos
   detectLogo(newImage)
+elif ("text" == sys.argv[1]):
+  # Check for text
+  detectText(newImage)
 else:
   # Default to labels
   detectLabels(newImage)
