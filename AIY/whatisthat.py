@@ -40,7 +40,7 @@ def getImage():
   # We failed to load in the image, or process it for some reason
   return None
   
-def detectLabels(imageToProcess):
+def detectLabels(client, imageToProcess):
   # Perform label detection on the image file
   response = client.label_detection(image=imageToProcess)
   labels = response.label_annotations
@@ -54,49 +54,52 @@ def detectLabels(imageToProcess):
 
   # Check how many results we got (if any) and output an appropiate response to say
   if (len(confidentResults) > 1):
-      print("That is a {}".format(" ".join(confidentResults)))
+      return "That is a {}".format(" ".join(confidentResults))
   elif (len(confidentResults) > 0):
-      print("That is {}".format(" ".join(confidentResults)))
+      return "That is {}".format(" ".join(confidentResults))
   else:
-      print("Sorry, I don't know what that is")
+      return "Sorry, I don't know what that is"
       
       
-def detectLogo (imageToProcess):
+def detectLogo (client, imageToProcess):
   # Performs logo detection on the image file
   response = client.logo_detection(image=imageToProcess)
   logos = response.logo_annotations
 
   if len(logos) > 0:
-    print("That is the {} logo.".format(logos[0].description))
+    return "That is the {} logo.".format(logos[0].description)
   else:
-     print("Sorry, I don't know what logo that is.")
+     return "Sorry, I don't know what logo that is."
 
-def detectText (imageToProcess):
+def detectText (client, imageToProcess):
   # Performs text detection on the image file
   response = client.text_detection(image=imageToProcess)
   texts = response.text_annotations
 
   if len(texts) > 0:
-    print("That says {}".format(texts[0].description))
+    return "That says {}".format(texts[0].description)
   else:
-     print("Sorry, I couldn't read that.")
+    return "Sorry, I couldn't read that."
 
-# Creat a client to perform the processing
-client = createClient()
+def takeAndProcessImage (processType):
+  # Creat a client to perform the processing
+  client = createClient()
 
-# Request a new image to be processed
-newImage = getImage()
+  # Request a new image to be processed
+  newImage = getImage()
 
-# What form of processing do we want?
-if (len(sys.argv) < 2):
-  # Default to labels
-  detectLabels(newImage)
-elif ("logo" == sys.argv[1]):
-  # Check for logos
-  detectLogo(newImage)
-elif ("text" == sys.argv[1]):
-  # Check for text
-  detectText(newImage)
-else:
-  # Default to labels
-  detectLabels(newImage)
+  # What form of processing do we want?
+  if ("logo" == processType):
+    # Check for logos
+    result = detectLogo(client, newImage)
+  elif ("text" == processType):
+    # Check for text
+    result = detectText(client, newImage)
+  else:
+    # Default to labels
+    result = detectLabels(client, newImage)
+  
+  return result
+
+if __name__ == '__main__':
+    takeAndProcessImage("label")

@@ -19,6 +19,7 @@ import aiy.audio
 import aiy.cloudspeech
 import aiy.voicehat
 import subprocess
+import whatisthat
 
 def main():
     recognizer = aiy.cloudspeech.get_recognizer()
@@ -38,21 +39,23 @@ def main():
         if text is None:
             print('Sorry, I did not hear you.')
         else:
+            # Clear the output variable, so we don't repeat any previous results
+            output = None
+ 
+            # Determine what action to take
             if 'what is that' in text:
-                output = subprocess.check_output("/home/pi/RPI/AIY/whatisthat.py", shell=True).strip()
-                if output:
-                   aiy.audio.say(output)
+                output = whatisthat.takeAndProcessImage('label')
             elif 'what logo is that' in text:
-                output = subprocess.check_output("/home/pi/RPI/AIY/whatisthat.py logo", shell=True).strip()
-                if output:
-                   aiy.audio.say(output)
+                output = whatisthat.takeAndProcessImage('logo')
             elif 'what does that say' in text:
-                output = subprocess.check_output("/home/pi/RPI/AIY/whatisthat.py text", shell=True).strip()
-                if output:
-                   aiy.audio.say(output)
+                output = whatisthat.takeAndProcessImage('text')
             elif 'goodbye' in text:
                 break
 
+            # If we got a result then both print and speak it. 
+            if output:
+               print(output)
+               aiy.audio.say(output)
 
 if __name__ == '__main__':
     main()
