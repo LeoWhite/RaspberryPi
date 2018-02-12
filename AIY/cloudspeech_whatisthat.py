@@ -53,7 +53,7 @@ def main():
                 break
 
             # If we got a result then both print and speak it. 
-            if output:
+            if output is not None:
                print(output)
                aiy.audio.say(output)
 
