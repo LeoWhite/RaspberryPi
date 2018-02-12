@@ -33,6 +33,8 @@ is taking the phots)
 
 Further details can be found at http://blog.mybigideas.uk/
 
+Original source, and related files, can be found at https://github.com/LeoWhite/RaspberryPi/tree/master/AIY
+
 """
 
 import io
@@ -46,8 +48,9 @@ import sys
 from google.cloud import vision
 from google.cloud.vision import types
 
-# Instantiates a client
 def createClient():
+  """Instantiates an instance of an ImageAnnotatorClient """
+
   # Instantiates a client
   return vision.ImageAnnotatorClient()
 
@@ -145,5 +148,7 @@ def takeAndProcessImage (processType):
   
   return result
 
+# If this is the 'main' file (i.e. not being imported) then default to
+# processing an image for any labels
 if __name__ == '__main__':
     takeAndProcessImage("label")
