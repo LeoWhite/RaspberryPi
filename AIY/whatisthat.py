@@ -151,4 +151,4 @@ def takeAndProcessImage (processType):
 # If this is the 'main' file (i.e. not being imported) then default to
 # processing an image for any labels
 if __name__ == '__main__':
-    takeAndProcessImage("label")
+    print(takeAndProcessImage("label"))
